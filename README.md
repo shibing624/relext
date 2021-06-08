@@ -185,5 +185,5 @@ answer: "吃了"
 
 # Reference
 
-- [RelExt_paper](./docs/RelExt- A Tool for Relation Extraction from Text in Ontology Extension.pdf)
 - [TextGrapher](https://github.com/liuhuanyong/TextGrapher)
+- [RelExt_paper](/docs/RelExt- A Tool for Relation Extraction from Text in Ontology Extension.pdf)
