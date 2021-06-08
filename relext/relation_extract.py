@@ -18,7 +18,6 @@ default_ner_dict = {
     'nh': '人物',
     "nr": "人名",
     'ni': '机构',
-    "nt": "机构团体名",
     'ns': '地名'
 }
 
@@ -94,7 +93,7 @@ class RelationExtract:
         svo = []
         tuples, child_dict_list = self.parser.parser_syntax(words, postags, sentence)
         for tuple in tuples:
-            rel = tuple[-1]
+            rel = tuple[6]
             if rel in ['SBV']:
                 sub_wd = tuple[1]
                 verb_wd = tuple[3]

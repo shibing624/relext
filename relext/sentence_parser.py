@@ -29,7 +29,7 @@ class LtpParser:
         postags = ['w'] + postags
         tuples = list()
         for index in range(len(words) - 1):
-            arc_index = arcs[index][0]
+            arc_index = arcs[index][1]
             arc_relation = arcs[index][2]
             tuples.append(
                 [index + 1, words[index + 1], postags[index + 1], words[arc_index], postags[arc_index], arc_index,
