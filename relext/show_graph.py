@@ -14,8 +14,8 @@ class ShowGraph:
         self.base = """
 <html>
 <head>
-  <script type="text/javascript" src="https://github.com/shibing624/relext/blob/main/static/VIS/dist/vis.js"></script>
-  <link href="https://github.com/shibing624/relext/blob/main/static/VIS/dist/vis.css" rel="stylesheet" type="text/css">
+  <script type="text/javascript" src="https://raw.githubusercontent.com/shibing624/relext/blob/main/static/VIS/dist/vis.js"></script>
+  <link href="https://raw.githubusercontent.com/shibing624/relext/blob/main/static/VIS/dist/vis.css" rel="stylesheet" type="text/css">
   <meta http-equiv="Content-Type" text="text/html; charset=utf-8" />
 </head>
 <body>
