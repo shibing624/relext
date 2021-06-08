@@ -9,7 +9,7 @@
 # relext
 RelExt: A Tool for Relation Extraction from Text.
 
-
+文本关系抽取工具。
 
 **Guide**
 
@@ -31,19 +31,20 @@ RelExt: A Tool for Relation Extraction from Text.
 
 
 关系抽取结果为三元组（triple），是一种图数据结构，知识图谱的最小单元，表示两个节点及它们之间的关系，即node1，edge，node2。
+
 语言学上，提取句子主干，如"姚明是李秋平的徒弟"主干为（姚明，徒弟，李秋平），形式化表示为（主语，谓语，宾语），也称为SPO三元组（subject，predicate，object），跟三元组同义。
 
-不同结构化程度的文本，三元组抽取方法不一样：
+不同结构化程度的文本，关系抽取(三元组抽取)方法不一样：
 
 - 结构化文本：映射规则即可转化为三元组，相对简单，业务依赖强。
-- 非结构化文本：关系抽取包括两个子任务，实体识别，实体关系分类。三元组抽取模型分为以下两类：
+- 非结构化文本：关系抽取包括两个子任务，实体识别，实体关系分类。三元组抽取模型分为以下两类，
 	1. pipeline模型：先基于序列标注模型识别文本的实体，再用分类器识别实体间的关系。优点：各模型单独训练，需要训练样本少，适合冷启动；缺点：模型误差传递。
 	2. 联合（joint）模型：实体识别模型和实体关系分类模型整合到一个模型，共享底层特征、二者损失值联合训练。优点：误差传递小，模型推理快；缺点：需要大量训练样本。
 
 # Feature
 
 
-### 聊天型对话（Generative Dialogue Bot）
+### 开放域文本关系抽取
 
 - GPT2 Model
 - Sequence To Sequence Model(seq2seq)
@@ -184,4 +185,5 @@ answer: "吃了"
 
 # Reference
 
-- [RelExt- A Tool for Relation Extraction from Text in Ontology Extension](docs/RelExt- A Tool for Relation Extraction from Text in Ontology Extension.pdf)
+- ![RelExt- A Tool for Relation Extraction from Text in Ontology Extension](docs/RelExt- A Tool for Relation Extraction from Text in Ontology Extension.pdf)
+- [TextGrapher](https://github.com/liuhuanyong/TextGrapher)
