@@ -103,12 +103,12 @@ output:
 ```
 
 PS:
-> svo: 主谓宾三元组
-> keyword: 关键词
-> freq: 高频词
-> ner: 实体词
-> coexist: 实体共现词
-> ner_keyword: 实体与关键词的关联词
+- svo: 主谓宾三元组
+- keyword: 关键词
+- freq: 高频词
+- ner: 实体词
+- coexist: 实体共现词
+- ner_keyword: 实体与关键词的关联词
 
 ### 示例效果
 
