@@ -1,4 +1,4 @@
-![alt text](docs/imgs/rel.png)
+<img src="docs/imgs/rel.png" width="50" />
 
 [![PyPI version](https://badge.fury.io/py/relext.svg)](https://badge.fury.io/py/relext)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -83,7 +83,7 @@ sys.path.append('..')
 from relext import RelationExtract
 
 article = """
-    9月13日，咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
+咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
           """
 
 m = RelationExtract()
