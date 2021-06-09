@@ -1,4 +1,4 @@
-![alt text](docs/public/relext.jpg)
+![alt text](docs/imgs/rel.png)
 
 [![PyPI version](https://badge.fury.io/py/relext.svg)](https://badge.fury.io/py/relext)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
