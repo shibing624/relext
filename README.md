@@ -1,4 +1,4 @@
-<img src="docs/imgs/rel.png" width="50" />
+<img src="docs/imgs/rel.png" width="100" />
 
 [![PyPI version](https://badge.fury.io/py/relext.svg)](https://badge.fury.io/py/relext)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -54,9 +54,7 @@ RelExt: A Tool for Relation Extraction from Text.
 
 # Install
 
-- Requirements and Installation
-
-The project is based on transformers 4.4.2+, torch 1.6.0+ and Python 3.6+.
+The project is based on Python 3.6+.
 Then, simply do:
 
 ```
