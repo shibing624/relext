@@ -70,7 +70,7 @@ python3 setup.py install
 ```
 
 # Usage
-## 主谓宾三元组抽取
+## 三元组关系抽取
 
 示例[base_demo.py](examples/base_demo.py)
 
@@ -102,7 +102,17 @@ output:
 }
 ```
 
+PS:
+> svo: 主谓宾三元组
+> keyword: 关键词
+> freq: 高频词
+> ner: 实体词
+> coexist: 实体共现词
+> ner_keyword: 实体与关键词的关联词
+
 ### 示例效果
+
+示例[article_triples_demo.py](examples/article_triples_demo.py)
 
 1. 雷洋嫖娼事件
 ![雷洋嫖娼事件](./docs/imgs/雷洋嫖娼事件.png)
