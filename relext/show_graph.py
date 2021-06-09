@@ -72,7 +72,7 @@ class ShowGraph:
         :param html_path:
         :return:
         """
-        with open(html_path, 'w+', encoding='utf-8') as f:
+        with open(html_path, 'w', encoding='utf-8') as f:
             html = self.base.replace('data_nodes', str(data_nodes)).replace('data_edges', str(data_edges))
             f.write(html)
             logger.info("save graph html: {}".format(html_path))

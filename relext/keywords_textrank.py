@@ -84,8 +84,8 @@ class TextKeyword:
 
     def __init__(self):
         """init, no params"""
-        self.candi_pos = ['n', 'v'] # 名词，动词
-        self.stop_pos = ['nt'] # 机构团体词
+        self.candi_pos = ['n', 'v']  # 名词，动词
+        self.stop_pos = ['nt']  # 机构团体词
         self.span = 5
 
     def extract_keywords(self, word_list, num_keywords=10):

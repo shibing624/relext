@@ -16,9 +16,9 @@ class Graph:
     def create_edge(self):
         nodes = []
         for t in self.triples:
-            # assert len(t) == 3
+            assert len(t) == 3
             nodes.append(t[0])
-            nodes.append(t[1])
+            nodes.append(t[2])
         node_dict = {node: index for index, node in enumerate(nodes)}
 
         data_nodes = []
@@ -29,8 +29,7 @@ class Graph:
 
         for t in self.triples:
             # node1 index, label, node2 index
-            # data = {'from': node_dict.get(t[0]), 'label': t[1], 'to': node_dict.get(t[2])}
-            data = {'from': node_dict.get(t[0]), 'label': '', 'to': node_dict.get(t[1])}
+            data = {'from': node_dict.get(t[0]), 'label': t[1], 'to': node_dict.get(t[2])}
             data_edges.append(data)
         return data_nodes, data_edges
 

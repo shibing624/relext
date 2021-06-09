@@ -15,7 +15,7 @@ class LtpParser:
 
     def _get_dep(self, words, postags, sentence):
         """
-        依存关系
+        句法依存关系
         :param words:
         :param postags:
         :param sentence:
@@ -49,11 +49,11 @@ class LtpParser:
             child_dict = dict()
             for arc in tuples:
                 if arc[3] == word:
-                    if arc[-1] in child_dict:
-                        child_dict[arc[-1]].append(arc)
+                    if arc[6] in child_dict:
+                        child_dict[arc[6]].append(arc)
                     else:
-                        child_dict[arc[-1]] = []
-                        child_dict[arc[-1]].append(arc)
+                        child_dict[arc[6]] = []
+                        child_dict[arc[6]].append(arc)
             child_dict_list.append([word, postags[index], index, child_dict])
         return child_dict_list
 

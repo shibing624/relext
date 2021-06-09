@@ -82,9 +82,47 @@ class RelationExtract:
                 combines.append('@'.join([i, j]))
         return combines
 
+    def _search_VOB(self, verb, child_dict_list):
+        """
+        根据SBV找VOB; SBV主谓关系, VOB动宾关系, IOB间宾关系
+        :param verb:
+        :param child_dict_list:
+        :return:
+        """
+        obj = ''
+        for child in child_dict_list:
+            wd = child[0]
+            attr = child[3]
+            if wd == verb:
+                if 'VOB' not in attr:
+                    continue
+                vob = attr['VOB'][0]
+                obj = vob[1]
+                return obj
+        return obj
+
+    def _search_IOB(self, verb, child_dict_list):
+        """
+        根据SBV找IOB; SBV主谓关系, VOB动宾关系, IOB间宾关系
+        :param verb:
+        :param child_dict_list:
+        :return:
+        """
+        obj = ''
+        for child in child_dict_list:
+            wd = child[0]
+            attr = child[3]
+            if wd == verb:
+                if 'IOB' not in attr:
+                    continue
+                vob = attr['IOB'][0]
+                obj = vob[1]
+                return obj
+        return obj
+
     def _get_triples_by_dep(self, words, postags, sentence):
         """
-        抽取出关系三元组，提取主体 - 动词 - 对象三元组（subject，verb，object）
+        抽取出关系三元组，提取主语 - 动词 - 对象三元组（subject，verb，object；主谓宾）
         :param words:
         :param postags:
         :param sentence:
@@ -94,16 +132,18 @@ class RelationExtract:
         tuples, child_dict_list = self.parser.parser_syntax(words, postags, sentence)
         for tuple in tuples:
             rel = tuple[6]
+            # 补充除动宾语关系之外的，如，IOB
             if rel in ['SBV']:
                 sub_wd = tuple[1]
                 verb_wd = tuple[3]
-                obj = self._complete_VOB(verb_wd, child_dict_list)
+                obj_vob = self._search_VOB(verb_wd, child_dict_list)
+                obj_iob = self._search_IOB(verb_wd, child_dict_list)
                 subj = sub_wd
                 verb = verb_wd
-                if not obj:
-                    svo.append([subj, verb])
-                else:
-                    svo.append([subj, verb + obj])
+                if obj_vob:
+                    svo.append([subj, verb, obj_vob])
+                if obj_iob:
+                    svo.append([subj, verb, obj_iob])
         return svo
 
     def _filter_triples(self, triples, ners):
@@ -120,24 +160,6 @@ class RelationExtract:
                     ner_triples.append(triple)
         return ner_triples
 
-    def _complete_VOB(self, verb, child_dict_list):
-        """
-        根据SBV找VOB
-        :param verb:
-        :param child_dict_list:
-        :return:
-        """
-        for child in child_dict_list:
-            wd = child[0]
-            attr = child[3]
-            if wd == verb:
-                if 'VOB' not in attr:
-                    continue
-                vob = attr['VOB'][0]
-                obj = vob[1]
-                return obj
-        return ''
-
     def _get_rel_entity(self, ners, keywords, subsent_segs):
         """
         通过关键词与实体进行实体关系抽取
@@ -148,24 +170,25 @@ class RelationExtract:
         """
         events = []
         rels = []
-        sents = []
+        sents_words = []
         ners = [i.split('/')[0] for i in set(ners)]
-        keywords = [i[0] for i in keywords]
-        for sent in subsent_segs:
+        for sent_seg in subsent_segs:
             tmp = []
-            for wd in sent:
+            for wd in sent_seg:
                 if wd in ners + keywords:
                     tmp.append(wd)
             if len(tmp) > 1:
-                sents.append(tmp)
+                sents_words.append(tmp)
         for ner in ners:
-            for sent in sents:
-                if ner in sent:
-                    tmp = ['->'.join([ner, wd]) for wd in sent if wd in keywords and wd != ner and len(wd) > 1]
+            for pairs in sents_words:
+                if ner in pairs:
+                    tmp = ['->'.join([ner, wd]) for wd in pairs if
+                           wd in keywords and wd != ner and len(wd) > 1 and len(ner) > 1]
                     if tmp:
                         rels += tmp
         for e in set(rels):
-            events.append([e.split('->')[0], e.split('->')[1]])
+            cate = '关联'
+            events.append([e.split('->')[0], cate, e.split('->')[1]])
         return events
 
     @staticmethod
@@ -189,8 +212,8 @@ class RelationExtract:
         # 对文章进行去噪处理
         text = self.remove_noisy(text)
         # 对文章进行短句切分处理
-        subsents = self.seg_to_sentence(text)
-        subsents_seg = []
+        sents = self.seg_to_sentence(text)
+        sents_seg = []
         # words_list存储整篇文章的词频信息
         words_list = []
         # ner_sents保存具有命名实体的句子
@@ -201,10 +224,13 @@ class RelationExtract:
         triples = []
         # 存储文章事件
         events = []
-        for sent in subsents:
+        for sent in sents:
+            sent = sent.strip()
+            if not sent:
+                continue
             words, postags = self.parser.seg_pos(sent)
             words_list += [[i[0], i[1]] for i in zip(words, postags)]
-            subsents_seg.append([i[0] for i in zip(words, postags)])
+            sents_seg.append([i[0] for i in zip(words, postags)])
             m_ners = self._get_ners(words, postags)
             if m_ners:
                 m_triple = self._get_triples_by_dep(words, postags, sent)
@@ -219,33 +245,38 @@ class RelationExtract:
         for keyword in keywords:
             name = keyword
             cate = '关键词'
-            events.append([name, cate])
-        # 对三元组进行event构建，这个可以做
+            obj = 'root'
+            events.append([name, cate, obj])
+        # 对三元组进行event构建
         for t in triples:
-            if (t[0] in keywords or t[1] in keywords) and len(t[0]) > 1 and len(t[1]) > 1:
-                events.append([t[0], t[1]])
+            if (t[0] in keywords or t[2] in keywords) and len(t[0]) > 1 and len(t[2]) > 1:
+                events.append(t)
 
         # 获取文章词频信息
-        word_dict = [i for i in
-                     Counter([i[0] for i in words_list if i[1][0] in ['n', 'v'] and len(i[0]) > 1]).most_common()][:10]
+        word_dict = [i for i in Counter([i[0] for i in words_list
+                                         if i[1][0] in ['n', 'v'] and len(i[0]) > 1]).most_common()][:num_keywords]
         for wd in word_dict:
             name = wd[0]
             cate = '高频词'
-            events.append([name, cate])
+            obj = 'root'
+            events.append([name, cate, obj])
 
         # 获取全文命名实体
         ner_dict = {i[0]: i[1] for i in Counter(ners).most_common()}
         for m_ners in ner_dict:
-            name = m_ners.split('/')[0]
-            cate = self.ner_dict[m_ners.split('/')[1]]
-            events.append([name, cate])
+            name, pos = m_ners.split('/')
+            cate = self.ner_dict.get(pos)
+            obj = 'root'
+            if len(name) > 1:
+                events.append([name, cate, obj])
 
         # 获取全文命名实体共现信息,构建事件共现网络
         co_dict = self._get_coexist(ner_sents, list(ner_dict.keys()))
-        co_events = [[i.split('@')[0].split('/')[0], i.split('@')[1].split('/')[0]] for i in co_dict]
+        cate = '关联'
+        co_events = [[i.split('@')[0].split('/')[0], cate, i.split('@')[1].split('/')[0]] for i in co_dict]
         events += co_events
         # 将关键词与实体进行关系抽取
-        events_entity_keyword = self._get_rel_entity(ners, keywords, subsents_seg)
+        events_entity_keyword = self._get_rel_entity(ners, keywords, sents_seg)
         events += events_entity_keyword
         print(events)
         graph = Graph(events)
