@@ -11,21 +11,20 @@ from collections import Counter
 
 from relext.graph import Graph
 from relext.keywords_textrank import TextKeyword
-from relext.sentence_parser import LtpParser
+from relext.sentence_parser import SentenceParser
 from relext.utils.log import logger
 
 default_ner_dict = {
-    'nh': '人物',
     "nr": "人名",
-    'ni': '机构',
-    'ns': '地名'
+    'ns': '地名',
+    'nt': '机构名',
 }
 
 
 class RelationExtract:
-    def __init__(self, ner_dict={}):
+    def __init__(self, ner_dict=None):
         self.text_keyword = TextKeyword()
-        self.parser = LtpParser()
+        self.parser = SentenceParser()
         self.ner_dict = ner_dict if ner_dict else default_ner_dict
 
     @staticmethod
@@ -48,19 +47,19 @@ class RelationExtract:
         """
         ners = []
         for index, pos in enumerate(postags):
-            if pos in self.ner_dict.keys():
+            if pos in self.ner_dict:
                 ners.append(words[index] + '/' + pos)
         return ners
 
-    def _get_coexist(self, ner_sents, ners):
+    def _get_coexist(self, wordpos_sents, ners):
         """
         构建实体之间的共现关系
-        :param ner_sents: 带实体的句子
+        :param wordpos_sents: 带实体的句子
         :param ners: 实体词
         :return:
         """
         co_list = []
-        for sent in ner_sents:
+        for sent in wordpos_sents:
             words = [i[0] + '/' + i[1] for i in zip(sent[0], sent[1])]
             co_ners = set(ners).intersection(set(words))
             co_info = self.combination(list(co_ners))
@@ -82,68 +81,81 @@ class RelationExtract:
                 combines.append('@'.join([i, j]))
         return combines
 
-    def _search_VOB(self, verb, child_dict_list):
+    def _search_attr(self, verb, child_dict_list, attr_list=None):
         """
-        根据SBV找VOB; SBV主谓关系, VOB动宾关系, IOB间宾关系
+        根据谓语动词找属性词
         :param verb:
         :param child_dict_list:
         :return:
         """
-        obj = ''
+        if attr_list is None:
+            attr_list = ['attr']
+        objs = []
         for child in child_dict_list:
             wd = child[0]
             attr = child[3]
             if wd == verb:
-                if 'VOB' not in attr:
-                    continue
-                vob = attr['VOB'][0]
-                obj = vob[1]
-                return obj
-        return obj
+                for i in attr_list:
+                    if i not in attr:
+                        continue
+                    vob = attr['attr'][0]
+                    objs.append(vob[1])
+        return objs
 
-    def _search_IOB(self, verb, child_dict_list):
+    def _search_obj(self, verb, child_dict_list, obj_list=None):
         """
-        根据SBV找IOB; SBV主谓关系, VOB动宾关系, IOB间宾关系
+        根据谓语动词找宾语词
         :param verb:
         :param child_dict_list:
         :return:
         """
-        obj = ''
+        if obj_list is None:
+            obj_list = ['dobj', 'pobj', 'lobj', 'range']
+        objs = []
         for child in child_dict_list:
             wd = child[0]
             attr = child[3]
             if wd == verb:
-                if 'IOB' not in attr:
-                    continue
-                vob = attr['IOB'][0]
-                obj = vob[1]
-                return obj
-        return obj
+                for i in obj_list:
+                    if i not in attr:
+                        continue
+                    vob = attr[i][0]
+                    objs.append(vob[1])
+        return objs
 
-    def _get_triples_by_dep(self, words, postags, sentence):
+    def _get_svo_by_dep(self, words, postags, dep, subj_list=None, verb_list=None):
         """
         抽取出关系三元组，提取主语 - 动词 - 对象三元组（subject，verb，object；主谓宾）
         :param words:
         :param postags:
-        :param sentence:
+        :param subj_list: 主语，句法类型，参考 https://github.com/shibing624/relext/blob/main/docs/dep_sd_zh.md
+        :param verb_list: 谓语，动词词性，参考 https://github.com/shibing624/relext/blob/main/docs/pos_pku.md
         :return:
         """
         svo = []
-        tuples, child_dict_list = self.parser.parser_syntax(words, postags, sentence)
+        if verb_list is None:
+            # 动词
+            verb_list = ['v']
+        if subj_list is None:
+            # 主语和主题词
+            subj_list = ['nsubj', 'xsubj', 'nsubjpass', 'top']
+        tuples, child_dict_list = self.parser.parser_syntax(words, postags, dep)
         for tuple in tuples:
+            v_pos = tuple[4]
             rel = tuple[6]
-            # 补充除动宾语关系之外的，如，IOB
-            if rel in ['SBV']:
+            # 查询主谓结果
+            if rel in subj_list and v_pos in verb_list:
                 sub_wd = tuple[1]
                 verb_wd = tuple[3]
-                obj_vob = self._search_VOB(verb_wd, child_dict_list)
-                obj_iob = self._search_IOB(verb_wd, child_dict_list)
+                # 补充宾语
+                attrs = self._search_attr(verb_wd, child_dict_list)
+                objs = self._search_obj(verb_wd, child_dict_list)
                 subj = sub_wd
                 verb = verb_wd
-                if obj_vob:
-                    svo.append([subj, verb, obj_vob])
-                if obj_iob:
-                    svo.append([subj, verb, obj_iob])
+                for attr in attrs:
+                    svo.append([subj, verb, attr])
+                for obj in objs:
+                    svo.append([subj, verb, obj])
         return svo
 
     def _filter_triples(self, triples, ners):
@@ -160,7 +172,7 @@ class RelationExtract:
                     ner_triples.append(triple)
         return ner_triples
 
-    def _get_rel_entity(self, ners, keywords, subsent_segs):
+    def _get_entity_relation(self, ners, keywords, subsent_segs):
         """
         通过关键词与实体进行实体关系抽取
         :param ners: 实体
@@ -168,9 +180,8 @@ class RelationExtract:
         :param subsent_segs: 句子，分词过
         :return:
         """
-        events = []
         rels = []
-        sents_words = []
+        relation_word_pairs = []
         ners = [i.split('/')[0] for i in set(ners)]
         for sent_seg in subsent_segs:
             tmp = []
@@ -178,18 +189,25 @@ class RelationExtract:
                 if wd in ners + keywords:
                     tmp.append(wd)
             if len(tmp) > 1:
-                sents_words.append(tmp)
+                relation_word_pairs.append(tmp)
         for ner in ners:
-            for pairs in sents_words:
-                if ner in pairs:
-                    tmp = ['->'.join([ner, wd]) for wd in pairs if
+            for pair in relation_word_pairs:
+                if ner in pair:
+                    tmp = ['->'.join([ner, wd]) for wd in pair if
                            wd in keywords and wd != ner and len(wd) > 1 and len(ner) > 1]
                     if tmp:
                         rels += tmp
-        for e in set(rels):
-            cate = '关联'
-            events.append([e.split('->')[0], cate, e.split('->')[1]])
-        return events
+        return rels
+
+    @staticmethod
+    def show_triples(triple_dict, html_path="graph_show.html"):
+        # 保存抽取的实体关系，即三元组
+        triple_list = []
+        for k, v in triple_dict.items():
+            triple_list.extend(v)
+        graph = Graph(triple_list)
+        graph.show(html_path)
+        logger.debug("save to graph done.")
 
     @staticmethod
     def seg_to_sentence(text):
@@ -209,77 +227,107 @@ class RelationExtract:
         """
         if not text:
             return
+        # 存储实体关系抽取结果，三元组
+        triple_dict = {}
         # 对文章进行去噪处理
         text = self.remove_noisy(text)
         # 对文章进行短句切分处理
         sents = self.seg_to_sentence(text)
         sents_seg = []
-        # words_list存储整篇文章的词频信息
+        # 存储整篇文章的词频信息
         words_list = []
-        # ner_sents保存具有命名实体的句子
-        ner_sents = []
-        # ners保存命名实体
+        # 保存具有命名实体的句子
+        wordpos_sents = []
+        # 保存命名实体
         ners = []
-        # triples保存主谓宾短语
-        triples = []
-        # 存储文章事件
-        events = []
+        # 保存主谓宾
+        svos = []
         for sent in sents:
             sent = sent.strip()
             if not sent:
                 continue
-            words, postags = self.parser.seg_pos(sent)
+            words, postags, dep = self.parser.tok_pos_dep(sent)
             words_list += [[i[0], i[1]] for i in zip(words, postags)]
             sents_seg.append([i[0] for i in zip(words, postags)])
             m_ners = self._get_ners(words, postags)
             if m_ners:
-                m_triple = self._get_triples_by_dep(words, postags, sent)
-                if not m_triple:
+                m_svo = self._get_svo_by_dep(words, postags, dep)
+                if not m_svo:
                     continue
-                triples += m_triple
+                svos += m_svo
                 ners += m_ners
-                ner_sents.append([words, postags])
+                wordpos_sents.append([words, postags])
 
-        # 获取文章关键词, 并组织图谱
+        # 获取文章关键词
+        kw_triples = []
         keywords = [i[0] for i in self.text_keyword.extract_keywords(words_list, num_keywords)]
         for keyword in keywords:
             name = keyword
             cate = '关键词'
-            obj = 'root'
-            events.append([name, cate, obj])
-        # 对三元组进行event构建
-        for t in triples:
-            if (t[0] in keywords or t[2] in keywords) and len(t[0]) > 1 and len(t[2]) > 1:
-                events.append(t)
+            obj = '关键词'
+            kw_triples.append([name, cate, obj])
+        if kw_triples:
+            triple_dict['keyword'] = kw_triples
 
         # 获取文章词频信息
-        word_dict = [i for i in Counter([i[0] for i in words_list
-                                         if i[1][0] in ['n', 'v'] and len(i[0]) > 1]).most_common()][:num_keywords]
+        freq_triples = []
+        word_dict = [i[0] for i in Counter([i[0] for i in words_list
+                                            if i[1][0] in ['n', 'v'] and len(i[0]) > 1]).most_common()][:num_keywords]
         for wd in word_dict:
-            name = wd[0]
+            name = wd
             cate = '高频词'
-            obj = 'root'
-            events.append([name, cate, obj])
+            obj = '高频词'
+            freq_triples.append([name, cate, obj])
+        if freq_triples:
+            triple_dict['freq'] = freq_triples
 
         # 获取全文命名实体
+        ner_triples = []
         ner_dict = {i[0]: i[1] for i in Counter(ners).most_common()}
         for m_ners in ner_dict:
             name, pos = m_ners.split('/')
             cate = self.ner_dict.get(pos)
-            obj = 'root'
+            obj = '实体词'
             if len(name) > 1:
-                events.append([name, cate, obj])
+                ner_triples.append([name, cate, obj])
+        if ner_triples:
+            triple_dict['ner'] = ner_triples
 
-        # 获取全文命名实体共现信息,构建事件共现网络
-        co_dict = self._get_coexist(ner_sents, list(ner_dict.keys()))
-        cate = '关联'
-        co_events = [[i.split('@')[0].split('/')[0], cate, i.split('@')[1].split('/')[0]] for i in co_dict]
-        events += co_events
+        # 获取全文命名实体共现信息，构建实体共现三元组
+        coexist_triples = []
+        co_dict = self._get_coexist(wordpos_sents, list(ner_dict.keys()))
+        for c in co_dict.keys():
+            name = c.split('@')[0].split('/')[0]
+            cate = '关联'
+            obj = c.split('@')[1].split('/')[0]
+            if len(name) > 1 and len(obj) > 1:
+                coexist_triples.append([name, cate, obj])
+        if coexist_triples:
+            triple_dict['coexist'] = coexist_triples
+
         # 将关键词与实体进行关系抽取
-        events_entity_keyword = self._get_rel_entity(ners, keywords, sents_seg)
-        events += events_entity_keyword
-        print(events)
-        graph = Graph(events)
-        graph.save_graph("graph_saved.html")
-        logger.debug("save to graph done.")
-        return graph
+        ner_keyword_triples = []
+        entity_rels = self._get_entity_relation(ners, keywords, sents_seg)
+        for e in set(entity_rels):
+            name = e.split('->')[0]
+            cate = '关联'
+            obj = e.split('->')[1]
+            if len(name) > 1 and len(obj) > 1:
+                ner_keyword_triples.append([name, cate, obj])
+        if ner_keyword_triples:
+            triple_dict['ner_keyword'] = ner_keyword_triples
+
+        # 主谓宾三元组
+        svo_triples = []
+        for t in svos:
+            name = t[0]
+            obj = t[2]
+            if len(name) > 1 and len(obj) > 1 and (
+                    name in keywords or obj in keywords or
+                    name in ner_dict or obj in ner_dict or
+                    name in word_dict or obj in word_dict
+            ):
+                svo_triples.append(t)
+        if svo_triples:
+            triple_dict['svo'] = svo_triples
+        return triple_dict

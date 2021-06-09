@@ -85,7 +85,7 @@ class TextKeyword:
     def __init__(self):
         """init, no params"""
         self.candi_pos = ['n', 'v']  # 名词，动词
-        self.stop_pos = ['nt']  # 机构团体词
+        self.stop_pos = ['t', 'Tg']  # 时间词，时素词
         self.span = 5
 
     def extract_keywords(self, word_list, num_keywords=10):
@@ -106,7 +106,7 @@ class TextKeyword:
                             word_list[j][0]) < 2:
                         continue
                     pair = tuple((word[0], word_list[j][0]))
-                    cm[(pair)] += 1
+                    cm[pair] += 1
 
         for terms, w in cm.items():
             g.add_edge(terms[0], terms[1], w)

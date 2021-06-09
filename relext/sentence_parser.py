@@ -1,39 +1,67 @@
 # -*- coding: utf-8 -*-
 """
 @author:XuMing(xuming624@qq.com), lhy<lhy_in_blcu@126.com
-@description: LTP parser
+@description: hanlp代替LTP，NER和dep识别效果更好
 """
-from ltp import LTP
+import hanlp
 
 from relext.utils.log import logger
 
 
-class LtpParser:
+class SentenceParser:
     def __init__(self):
-        self.ltp = LTP()
-        logger.debug('use LTP parser.')
+        self.model = hanlp.load(hanlp.pretrained.mtl.CLOSE_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)  # 世界最大中文语料库
+        logger.debug('use hanlp parser.')
 
-    def _get_dep(self, words, postags, sentence):
+    def tok_pos_dep(self, sentence):
+        """
+        执行粗颗粒度分词、词性标注和依存句法分析
+        :param sentence:
+        :return:
+        {
+            "tok/coarse": [
+                "阿婆主",
+                "来到",
+                "北京立方庭",
+                "参观",
+                "自然语义科技公司",
+                "。"
+            ],
+            "pos/pku": [
+                "n",
+                "v",
+                "ns",
+                "v",
+                "n",
+                "w"
+            ],
+            "dep": [
+                (2, "nsubj"),
+                (0, "root"),
+                (2, "dobj"),
+                (2, "conj"),
+                (4, "dobj"),
+                (2, "punct")
+            ]
+        }
+        """
+        ret_dict = self.model(sentence, tasks=['tok/coarse', 'pos/pku', 'dep'], skip_tasks='tok/fine')
+        return ret_dict['tok/coarse'], ret_dict['pos/pku'], ret_dict['dep']
+
+    def _get_dep(self, words, postags, dep):
         """
         句法依存关系
         :param words:
         :param postags:
-        :param sentence:
         :return:
         """
-        seg, h = self.ltp.seg([sentence])
-        dep = self.ltp.dep(h)
-        arcs = dep[0]
-
-        words = ['Root'] + words
-        postags = ['w'] + postags
-        tuples = list()
-        for index in range(len(words) - 1):
-            arc_index = arcs[index][1]
-            arc_relation = arcs[index][2]
+        tuples = []
+        for index in range(len(words)):
+            dep_index = dep[index][0]
+            dep_index = dep_index - 1 if dep_index > 0 else dep_index
+            dep_relation = dep[index][1]
             tuples.append(
-                [index + 1, words[index + 1], postags[index + 1], words[arc_index], postags[arc_index], arc_index,
-                 arc_relation])
+                [index, words[index], postags[index], words[dep_index], postags[dep_index], dep_index, dep_relation])
         return tuples
 
     def _build_parse_child_dict(self, words, postags, tuples):
@@ -57,26 +85,13 @@ class LtpParser:
             child_dict_list.append([word, postags[index], index, child_dict])
         return child_dict_list
 
-    def parser_syntax(self, words, postags, sentence):
+    def parser_syntax(self, words, postags, dep):
         """
         提取句子依存关系，保留依存结构
         :param words:
         :param postags:
-        :param sentence:
         :return:
         """
-        tuples = self._get_dep(words, postags, sentence)
+        tuples = self._get_dep(words, postags, dep)
         child_dict_list = self._build_parse_child_dict(words, postags, tuples)
         return tuples, child_dict_list
-
-    def seg_pos(self, sentence):
-        """
-        句子分词及词性标注
-        :param sentence:
-        :return:
-        """
-        seg, h = self.ltp.seg([sentence])
-        words = seg[0]
-        pos = self.ltp.pos(h)
-        postags = pos[0]
-        return words, postags

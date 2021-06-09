@@ -32,7 +32,7 @@ RelExt: A Tool for Relation Extraction from Text.
 
 关系抽取结果为三元组（triple），是一种图数据结构，知识图谱的最小单元，表示两个节点及它们之间的关系，即node1，edge，node2。
 
-语言学上，提取句子主干，如"姚明是李秋平的徒弟"主干为（姚明，徒弟，李秋平），形式化表示为（主语，谓语，宾语），也称为SPO三元组（subject，predicate，object），跟三元组同义。
+语言学上，提取句子主干，如"姚明是李秋平的徒弟"主干为（姚明，徒弟，李秋平），形式化表示为（主语，谓语，宾语），也称为SPO（subject，predicate，object）三元组，还有主谓宾（SVO）三元组（姚明，是，徒弟），均是三元组。
 
 不同结构化程度的文本，关系抽取(三元组抽取)方法不一样：
 
@@ -46,9 +46,10 @@ RelExt: A Tool for Relation Extraction from Text.
 
 ### 开放域文本关系抽取
 
-- GPT2 Model
-- Sequence To Sequence Model(seq2seq)
-- Taobao dataset
+- 基于HanLP的dep句法依存分析，抽取主谓宾三元组
+- 基于HanLP的ner实体识别，抽取文章实体词
+- 基于TextRank图模型抽取文章核心关键词
+- 基于文章TF词频抽取高频词
 
 
 # Install
@@ -71,80 +72,45 @@ python3 setup.py install
 ```
 
 # Usage
-## 问答型对话（Search Bot）
+## 主谓宾三元组抽取
 
 示例[base_demo.py](examples/base_demo.py)
 
 ```python
-import relext import Bot
+import sys
 
-bot = Bot()
-response = bot.answer('姚明多高呀？')
-print(response)
+sys.path.append('..')
+from relext import RelationExtract
+
+article = """
+    9月13日，咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
+          """
+
+m = RelationExtract()
+triples = m.extract_triples(article)
+print(triples)
 ```
 
 output:
 
 ```
-query: "姚明多高呀？"
-
-answer: "226cm"
+{
+'svo': [['咸阳市公安局', '捣毁', '窝点'], ['韩立明', '抓住', '姚丽丽']],
+'keyword': [['传销', '关键词', '关键词'], ['窝点', '关键词', '关键词'], ['韩立明', '关键词', '关键词'], ['捣毁', '关键词', '关键词'], ['抓住', '关键词', '关键词'], ['主犯', '关键词', '关键词'], ['民警', '关键词', '关键词'], ['查处', '关键词', '关键词'], ['出动', '关键词', '关键词'], ['全员', '关键词', '关键词']],
+'freq': [['咸阳市公安局', '高频词', '高频词'], ['解放路', '高频词', '高频词'], ['街角', '高频词', '高频词'], ['捣毁', '高频词', '高频词'], ['传销', '高频词', '高频词'], ['窝点', '高频词', '高频词'], ['韩立明', '高频词', '高频词'], ['抓住', '高频词', '高频词'], ['主犯', '高频词', '高频词'], ['姚丽丽', '高频词', '高频词']],
+'ner': [['咸阳市公安局', '机构名', '实体词'], ['解放路', '地名', '实体词'], ['韩立明', '人名', '实体词'], ['姚丽丽', '人名', '实体词']],
+'coexist': [['解放路', '关联', '咸阳市公安局'], ['咸阳市公安局', '关联', '解放路'], ['姚丽丽', '关联', '韩立明'], ['韩立明', '关联', '姚丽丽']],
+'ner_keyword': [['解放路', '关联', '传销'], ['姚丽丽', '关联', '韩立明'], ['咸阳市公安局', '关联', '传销'], ['咸阳市公安局', '关联', '捣毁'], ['韩立明', '关联', '抓住'], ['韩立明', '关联', '主犯'], ['解放路', '关联', '捣毁'], ['解放路', '关联', '窝点'], ['姚丽丽', '关联', '抓住'], ['咸阳市公安局', '关联', '窝点'], ['姚丽丽', '关联', '主犯']]
+}
 ```
 
+### 示例效果
 
-## 聊天型对话（Generative Bot）
+1. 雷洋嫖娼事件
+![雷洋嫖娼事件](./docs/imgs/雷洋嫖娼事件.png)
 
-### GPT2模型使用
-基于GPT2生成模型训练的聊天型对话模型。
-
-在[模型分享](#模型分享)中下载模型，将模型文件夹model_epoch40_50w下的文件放到自己指定目录`your_model_dir`下：
-```
-model_epoch40_50w
-├── config.json
-├── pytorch_model.bin
-└── vocab.txt
-```
-
-示例[genbot_demo.py](examples/genbot_demo.py)
-
-
-```python
-import relext import Bot
-
-bot = Bot(gpt_model_path=your_model_dir)
-response = bot.answer('亲 你吃了吗？', use_gen=True, use_search=False, use_task=False)
-print(response)
-```
-
-output:
-
-```
-query: "亲 吃了吗？"
-
-answer: "吃了"
-```
-
-
-# Dataset
-
-### 关系抽取语料分享
-| 关系抽取语料名称 | 数据集地址 |语料描述|
-|---------|--------|--------|
-|常见中文闲聊|[chinese_chatbot_corpus](https://github.com/codemayq/chinese_chatbot_corpus)|包含小黄鸡语料、豆瓣语料、电视剧对白语料、贴吧论坛回帖语料、微博语料、PTT八卦语料、青云语料等|
-|50w中文闲聊语料 | [百度网盘(提取码:4g5e)](https://pan.baidu.com/s/1M87Zf9e8iBqqmfTkKBWBWA) 或 [GoogleDrive](https://drive.google.com/drive/folders/1QFRsftLNTR_D3T55mS_FocPEZI7khdST?usp=sharing) |包含50w个多轮对话的原始语料、预处理数据|
-
-
-中文关系抽取语料的内容样例如下:
-```
-
-```
-
-### 模型分享
-
-|模型 | 共享地址 |模型描述|
-|---------|--------|--------|
-|model_epoch40_50w | [百度网盘(提取码:aisq)](https://pan.baidu.com/s/11KZ3hU2_a2MtI_StXBUKYw) 或 [GoogleDrive](https://drive.google.com/drive/folders/18TG2sKkHOZz8YlP5t1Qo_NqnGx9ogNay?usp=sharing) |使用50w多轮对话语料训练了40个epoch，loss降到2.0左右。|
-
+2. 南京胖哥事件
+![南京胖哥事件](./docs/imgs/南京胖哥事件.png)
 
 # Contact
 

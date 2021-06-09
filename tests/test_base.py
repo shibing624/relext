@@ -8,67 +8,31 @@ import sys
 import unittest
 
 sys.path.append('..')
-import text2vec
-import numpy as np
+from relext.relation_extract import RelationExtract
+
+m = RelationExtract()
 
 
 class BaseTestCase(unittest.TestCase):
-    def test_encode_char(self):
-        """测试文本 char encode结果"""
-        char = '卡'
-        emb = text2vec.encode(char)
-        t = type(emb)
+    def test_extract(self):
+        """测试文本extract triples结果"""
+        a = """
+        2021年transformers为生产环境带来次世代最先进的多语种NLP技术。姚明是李秋平的徒弟。
+        阿婆主来到立方庭参观公司。阿婆主来到北京立方庭参观自然语义科技公司。
+        萨哈夫说，伊拉克将同联合国继续保持合作。 i dont know. do you? 这是 啥？
+        """
+        t = m.extract_triples(a)
+        print('len triple_dict,', len(t))
         print(t)
-        self.assertTrue(t == np.ndarray)
+        self.assertEqual(len(t), 6)
 
-        print(char, emb, emb.shape)
-        self.assertEqual(emb.shape, (200,))
-
-        print(' '.join(["{:.3f}".format(i) for i in emb[:3]]))
-        self.assertTrue(' '.join(["{:.3f}".format(i) for i in emb[:3]]) == "0.068 -0.110 -0.048")
-
-    def test_encode_word(self):
-        """测试文本 word encode结果"""
-        word = '银行卡'
-        emb = text2vec.encode(word)
-        print(word, emb)
-        self.assertEqual(emb.shape, (200,))
-        self.assertTrue(' '.join(["{:.3f}".format(i) for i in emb[:3]]) == "0.002 -0.126 0.053")
-
-    def test_encode_text(self):
-        """测试文本 text encode结果"""
-        a = '如何更换花呗绑定银行卡'
-        emb = text2vec.encode(a)
-        print(a, emb)
-        self.assertEqual(emb.shape, (200,))
-        self.assertTrue(' '.join(["{:.3f}".format(i) for i in emb[:3]]) == "0.041 -0.126 0.019")
-
-    def test_oov_emb(self):
-        """测试 OOV word embedding"""
-        w = '，'
-        comma_res = text2vec.encode(w)
-        print(w, comma_res)
-        self.assertEqual(comma_res, 0.0)
-
-        w = '特价机票'
-        r = text2vec.encode(w)
-        print(w, r)
-
-        w = '特价'
-        r1 = text2vec.encode(w)
-        print(w, r1)
-
-        w = '机票'
-        r2 = text2vec.encode(w)
-        print(w, r2)
-
-        emb = [r1, r2]
-        r_average = np.array(emb).sum(axis=0) / 2.0
-        print('r_average:', r_average)
-
-        if str(r) == str(r_average):
-            print('same')
-        self.assertTrue(str(r) == str(r_average))
+    def test_single_sent_extract(self):
+        """测试single_sent_extract"""
+        a = '阿婆主来到立方庭参观公司'
+        t = m.extract_triples(a)
+        print('len triple_dict,', len(t))
+        print(t)
+        self.assertEqual(len(t), 2)
 
 
 if __name__ == '__main__':
