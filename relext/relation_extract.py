@@ -158,12 +158,12 @@ class RelationExtract:
                     svo.append([subj, verb, obj])
         return svo
 
-    def _get_event_by_srl(self, words, postags, srls, subj_list=None, verb_list=None, obj_list = None):
+    def _get_event_by_srl(self, words, postags, srls, subj_list=None, verb_list=None, obj_list=None):
         """
         抽取出施事者，谓词，受事者三元组
         :param words:
         :param postags:
-        :param srl:
+        :param srls:
         "srl": [
                 [["阿婆主", "ARG0", 0, 1], ["来到", "PRED", 1, 2], ["北京立方庭", "ARG1", 2, 4]],
                 [["阿婆主", "ARG0", 0, 1], ["参观", "PRED", 4, 5], ["自然语义科技公司", "ARG1", 5, 9]]
@@ -171,44 +171,60 @@ class RelationExtract:
         :return:
         """
         ret = []
+        # 谓语动词
         if verb_list is None:
-            # 谓语动词
             verb_list = ['PRED']
+        # 施事者
         if subj_list is None:
-            # 施事者
             subj_list = ['ARG0']
+        # 受事者
         if obj_list is None:
-            # 受事者
             obj_list = ['ARG1']
+        words_list = [[i[0], i[1]] for i in zip(words, postags)]
         for srl in srls:
             if len(srl) >= 3:
                 subj = ''
                 verb = ''
                 obj = ''
-                for i in srl:
-                    if i[1] in subj_list:
-                        subj = i[0]
-                    if i[1] in verb_list:
-                        verb = i[0]
-                    if i[1] in obj_list:
-                        obj = i[0]
+                for srl_unit in srl:
+                    # srl_unit format: ["阿婆主", "ARG0", 0, 1]
+                    word, rel, begin, end = srl_unit[0], srl_unit[1], srl_unit[2], srl_unit[3]
+                    word_size = end - begin
+                    assert word_size > 0
+                    if rel in subj_list:
+                        if word_size == 1:
+                            subj = word
+                        else:
+                            word_list = self._filter_ner_words(words_list, srl_unit)
+                            # 重点词在文本靠后
+                            subj = word_list[-1] if len(word_list) > 0 else word
+                    elif rel in verb_list:
+                        verb = word
+                    elif rel in obj_list:
+                        if word_size == 1:
+                            obj = word
+                        else:
+                            word_list = self._filter_ner_words(words_list, srl_unit)
+                            # 重点词在文本靠后
+                            obj = word_list[-1] if len(word_list) > 0 else word
                 if subj and verb and obj:
                     ret.append([subj, verb, obj])
         return ret
 
-    def _filter_triples(self, triples, ners):
+    def _filter_ner_words(self, words_list, triple):
         """
-        过滤出跟命名实体相关的事件三元组
+        过滤出跟命名实体相关的三元组
         :param triples:
         :param ners:
         :return:
         """
-        ner_triples = []
-        for ner in ners:
-            for triple in triples:
-                if ner in triple:
-                    ner_triples.append(triple)
-        return ner_triples
+        words = []
+        begin, end = triple[2], triple[3]
+        for j in words_list[begin:end]:
+            wd, postag = j
+            if postag in self.ner_dict:
+                words.append(wd)
+        return words
 
     def _get_entity_relation(self, ners, keywords, subsent_segs):
         """

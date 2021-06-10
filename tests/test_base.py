@@ -24,7 +24,7 @@ class BaseTestCase(unittest.TestCase):
         t = m.extract_triples(a)
         print('len triple_dict,', len(t))
         print(t)
-        self.assertEqual(len(t), 6)
+        self.assertEqual(7, len(t))
 
     def test_single_sent_extract(self):
         """测试single_sent_extract"""
@@ -32,7 +32,7 @@ class BaseTestCase(unittest.TestCase):
         t = m.extract_triples(a)
         print('len triple_dict,', len(t))
         print(t)
-        self.assertEqual(len(t), 2)
+        self.assertEqual(2, len(t))
 
 
 if __name__ == '__main__':

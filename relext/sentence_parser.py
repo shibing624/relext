@@ -49,6 +49,8 @@ class SentenceParser:
             ]
         }
         """
+        if not sentence:
+            return
         ret_dict = self.model(sentence, tasks=['tok/coarse', 'pos/pku', 'srl', 'dep'], skip_tasks='tok/fine')
         return ret_dict['tok/coarse'], ret_dict['pos/pku'], ret_dict['srl'], ret_dict['dep']
 
