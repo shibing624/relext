@@ -49,19 +49,18 @@ RelExt: A Tool for Relation Extraction from Text.
 - 基于TextRank图模型抽取文章核心关键词
 - 基于文章TF词频抽取高频词
 
-### pipeline方法
+### Pipeline方法
 
 - 实体抽取: 从一个句子中识别出实体词（entity），判断两个实体词是否有关系。参考NER识别任务[NER-models](https://github.com/shibing624/NER-models)
 - 实体关系分类: 判断句子中两个entity是哪种关系，属于多分类问题。
 
 主要是解决实体关系分类问题，本质是文本分类问题，网络结构的设计更多是考虑句子中哪些部分对relation label有更大贡献，大体思想如下：
 
-- 使用[Selective Attention](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/acl2016_nre.pdf)引入Attention机制，利用Attention权重对不同bag（数据中包含两个entity的所有句子称为一个Bag）内的句子赋予不同的权重，这样既可以过滤噪声，也可以充分利用信息。
-- 使用[Memory Network](https://www.ijcai.org/proceedings/2017/0559.pdf)做关系抽取，考虑句子中不同词对relation label的影响程度不同，以及relation label之间的依赖关系。
-- 使用[Bert](https://github.com/yuanxiaosc/Entity-Relation-Extraction/blob/master/Schema%E7%BA%A6%E6%9D%9F%E7%9A%84%E7%9F%A5%E8%AF%86%E6%8A%BD%E5%8F%96%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%EF%BC%88%E2%80%9C%E4%BF%A1%E6%81%AF%E6%8A%BD%E5%8F%96%E2%80%9D%E4%BB%BB%E5%8A%A1%E5%86%A0%E5%86%9B%E9%98%9F%E4%BC%8D%E6%8A%A5%E5%91%8A%EF%BC%89.pdf)模型先做
-实体识别，然后做实体对关系分类，此处NER识别准确率有是卡点（90%左右），还会出现大量无意义实体对，再做存在关系识别，并抽取实体subject和object。
+- 基于[Selective Attention](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/acl2016_nre.pdf)引入Attention机制，利用Attention权重对不同bag（数据中包含两个entity的所有句子称为一个Bag）内的句子赋予不同的权重，这样既可以过滤噪声，也可以充分利用信息。
+- 基于[Memory Network](https://www.ijcai.org/proceedings/2017/0559.pdf)做关系抽取，考虑句子中不同词对relation label的影响程度不同，以及relation label之间的依赖关系。
+- 基于[Bert](https://github.com/yuanxiaosc/Entity-Relation-Extraction/blob/master/Schema%E7%BA%A6%E6%9D%9F%E7%9A%84%E7%9F%A5%E8%AF%86%E6%8A%BD%E5%8F%96%E7%B3%BB%E7%BB%9F%E6%9E%B6%E6%9E%84%EF%BC%88%E2%80%9C%E4%BF%A1%E6%81%AF%E6%8A%BD%E5%8F%96%E2%80%9D%E4%BB%BB%E5%8A%A1%E5%86%A0%E5%86%9B%E9%98%9F%E4%BC%8D%E6%8A%A5%E5%91%8A%EF%BC%89.pdf)模型先做实体识别，然后做实体对关系分类，此处NER识别准确率大概90%左右，还会出现大量无意义实体对，再做存在关系识别，并抽取实体subject和object。
 
-### joint方法
+### Joint方法
 
 实体识别与实体关系分类一起做的融合模型：
 - Seq2Seq Model
@@ -85,7 +84,7 @@ RelExt: A Tool for Relation Extraction from Text.
 
 
 
-### pipeline方法
+### Pipeline方法
 
 #### Bert模型
 
@@ -94,12 +93,13 @@ RelExt: A Tool for Relation Extraction from Text.
 1. 对文本的所有实体词抽取出来，然后确定句子中存在哪些实体关系，基于Bert多分类模型识别命中的关系概率（各关系互不冲突，使用sigmoid）。
 2. 关系元素抽取，枚举第一步预测的每个属性，从句子中标注subject和object，基于Bert的CRF模型输出BIO序列标注预测结果。
 
-### joint方法
+### Joint方法
 
 #### Seq2Seq模型
 
-基于大规模标注样本[Baidu Information Extraction](#Baidu Information Extraction)SAOKE数据集，训练Seq2Seq的端到端模型[Logician](https://arxiv.org/abs/1904.12535v1)，在开放域信息抽取，
-包括动词介词，名词性短语，描述性短语和上下位关系抽取，可以取得F1=0.431的结果。
+基于大规模标注样本[Baidu Information Extraction](#Baidu Information Extraction)SAOKE数据集，训练Seq2Seq的端到端模型[Logician](https://arxiv.org/abs/1904.12535v1)。
+
+其在开放域信息抽取，包括动词介词，名词性短语，描述性短语和上下位关系抽取，paper效果F1：0.431。
 
 # Install
 
@@ -179,15 +179,15 @@ PS:
 数据样例：
 
 ```
- The <e1>microphone</e1> converts sound into an electrical <e2>signal</e2>.
+The <e1>microphone</e1> converts sound into an electrical <e2>signal</e2>.
 Cause-Effect(e1,e2)
 Comment:
 ```
 格式：第一行是sentence，第二行是两个entity的relation，第三行是备注。
 
-### Baidu Information Extraction
+### Baidu Information Extraction 数据集
 
-[Information Extraction](https://ai.baidu.com/broad/download)
+官方下载地址：[Information Extraction](https://ai.baidu.com/broad/download)
 
 数据样例：
 ```
