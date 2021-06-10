@@ -158,6 +158,44 @@ class RelationExtract:
                     svo.append([subj, verb, obj])
         return svo
 
+    def _get_event_by_srl(self, words, postags, srls, subj_list=None, verb_list=None, obj_list = None):
+        """
+        抽取出施事者，谓词，受事者三元组
+        :param words:
+        :param postags:
+        :param srl:
+        "srl": [
+                [["阿婆主", "ARG0", 0, 1], ["来到", "PRED", 1, 2], ["北京立方庭", "ARG1", 2, 4]],
+                [["阿婆主", "ARG0", 0, 1], ["参观", "PRED", 4, 5], ["自然语义科技公司", "ARG1", 5, 9]]
+            ],
+        :return:
+        """
+        ret = []
+        if verb_list is None:
+            # 谓语动词
+            verb_list = ['PRED']
+        if subj_list is None:
+            # 施事者
+            subj_list = ['ARG0']
+        if obj_list is None:
+            # 受事者
+            obj_list = ['ARG1']
+        for srl in srls:
+            if len(srl) >= 3:
+                subj = ''
+                verb = ''
+                obj = ''
+                for i in srl:
+                    if i[1] in subj_list:
+                        subj = i[0]
+                    if i[1] in verb_list:
+                        verb = i[0]
+                    if i[1] in obj_list:
+                        obj = i[0]
+                if subj and verb and obj:
+                    ret.append([subj, verb, obj])
+        return ret
+
     def _filter_triples(self, triples, ners):
         """
         过滤出跟命名实体相关的事件三元组
@@ -242,21 +280,35 @@ class RelationExtract:
         ners = []
         # 保存主谓宾
         svos = []
+        # 事件三元组
+        events = []
         for sent in sents:
             sent = sent.strip()
             if not sent:
                 continue
-            words, postags, dep = self.parser.tok_pos_dep(sent)
+            words, postags, srls, deps = self.parser.tok_parser(sent)
             words_list += [[i[0], i[1]] for i in zip(words, postags)]
             sents_seg.append([i[0] for i in zip(words, postags)])
+            m_events = self._get_event_by_srl(words, postags, srls)
             m_ners = self._get_ners(words, postags)
             if m_ners:
-                m_svo = self._get_svo_by_dep(words, postags, dep)
+                m_svo = self._get_svo_by_dep(words, postags, deps)
                 if not m_svo:
                     continue
                 svos += m_svo
                 ners += m_ners
+                events += m_events
                 wordpos_sents.append([words, postags])
+
+        # 获取文章事件三元组
+        event_triples = []
+        for t in events:
+            name = t[0]
+            obj = t[2]
+            if len(name) > 1 and len(obj) > 1:
+                event_triples.append(t)
+        if event_triples:
+            triple_dict['event'] = event_triples
 
         # 获取文章关键词
         kw_triples = []

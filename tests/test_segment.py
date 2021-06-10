@@ -37,7 +37,8 @@ class SegTestCase(unittest.TestCase):
         doc.pretty_print()
 
         # 执行粗颗粒度分词、词性标注和依存句法分析
-        doc = HanLP('阿婆主来到北京立方庭参观自然语义科技公司。', tasks=['tok/coarse', 'pos/pku', 'dep'], skip_tasks='tok/fine')
+        doc = HanLP('阿婆主来到北京立方庭参观自然语义科技公司。', tasks=['tok/coarse', 'pos/pku', 'dep', 'srl'],
+                    skip_tasks='tok/fine')
         doc.pretty_print()
         print('all:', doc)
 
@@ -46,7 +47,8 @@ class SegTestCase(unittest.TestCase):
         import hanlp
         HanLP = hanlp.load(hanlp.pretrained.mtl.CLOSE_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)  # 世界最大中文语料库
         # 执行粗颗粒度分词、词性标注和依存句法分析
-        doc = HanLP('阿婆主来到北京立方庭参观自然语义科技公司。', tasks=['tok/coarse', 'pos/pku', 'dep'], skip_tasks='tok/fine')
+        doc = HanLP('阿婆主来到北京立方庭参观自然语义科技公司。', tasks=['tok/coarse', 'pos/pku', 'dep'],
+                    skip_tasks='tok/fine')
         exp = {
             "tok/coarse": [
                 "阿婆主",
@@ -111,6 +113,24 @@ class SegTestCase(unittest.TestCase):
 
         out = HanLP('国家主席习近平访问韩国', task='tok/coarse')
         out.pretty_print()
+
+    def test_hanlp_srl(self):
+        """hanlp srl结果"""
+        import hanlp
+        HanLP = hanlp.load(hanlp.pretrained.mtl.CLOSE_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)  # 世界最大中文语料库
+        out = HanLP('荣荣对奶奶选择的武警北京二院的治疗效果及其内部管理问题有质疑。', tasks=['tok/coarse', 'pos/pku', 'dep', 'srl'],
+                    skip_tasks='tok/fine')
+        out.pretty_print()
+
+        out = HanLP('中国国家主席习近平访问韩国', task=['srl'])
+        out.pretty_print()
+
+        out = HanLP(['我送莉莉一朵玫瑰花',
+                     '中国国家主席习近平访问韩国，并在首尔发表演讲。',
+                     '中国国家主席习近平访问韩国，并在首尔发表演讲，取得圆满进展。',
+                     ], tasks=['tok/coarse', 'pos/pku', 'dep', 'srl'], skip_tasks='tok/fine')
+        out.pretty_print()
+        print(out)
 
 
 if __name__ == '__main__':

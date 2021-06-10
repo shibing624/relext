@@ -13,9 +13,9 @@ class SentenceParser:
         self.model = hanlp.load(hanlp.pretrained.mtl.CLOSE_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)  # 世界最大中文语料库
         logger.debug('use hanlp parser.')
 
-    def tok_pos_dep(self, sentence):
+    def tok_parser(self, sentence):
         """
-        执行粗颗粒度分词、词性标注和依存句法分析
+        执行粗颗粒度分词、词性标注和依存句法分析，语义角色标注
         :param sentence:
         :return:
         {
@@ -35,6 +35,10 @@ class SentenceParser:
                 "n",
                 "w"
             ],
+            "srl": [
+                [["阿婆主", "ARG0", 0, 1], ["来到", "PRED", 1, 2], ["北京立方庭", "ARG1", 2, 4]],
+                [["阿婆主", "ARG0", 0, 1], ["参观", "PRED", 4, 5], ["自然语义科技公司", "ARG1", 5, 9]]
+            ],
             "dep": [
                 (2, "nsubj"),
                 (0, "root"),
@@ -45,8 +49,8 @@ class SentenceParser:
             ]
         }
         """
-        ret_dict = self.model(sentence, tasks=['tok/coarse', 'pos/pku', 'dep'], skip_tasks='tok/fine')
-        return ret_dict['tok/coarse'], ret_dict['pos/pku'], ret_dict['dep']
+        ret_dict = self.model(sentence, tasks=['tok/coarse', 'pos/pku', 'srl', 'dep'], skip_tasks='tok/fine')
+        return ret_dict['tok/coarse'], ret_dict['pos/pku'], ret_dict['srl'], ret_dict['dep']
 
     def _get_dep(self, words, postags, dep):
         """

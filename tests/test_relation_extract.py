@@ -28,7 +28,7 @@ class RelTestCase(unittest.TestCase):
         ]
         outs = []
         for sent in sents:
-            words, postags, dep = m.parser.tok_pos_dep(sent)
+            words, postags, dep = m.parser.tok_parser(sent)
             print(words, postags, dep)
             m_triple = m._get_svo_by_dep(words, postags, dep)
             print(m_triple)
@@ -53,7 +53,7 @@ class RelTestCase(unittest.TestCase):
         ]
         outs = []
         for sent in sents:
-            words, postags, dep = m.parser.tok_pos_dep(sent)
+            words, postags, dep = m.parser.tok_parser(sent)
             print(words, postags, dep)
             m_triple = m._get_svo_by_dep(words, postags, dep)
             print(m_triple)
