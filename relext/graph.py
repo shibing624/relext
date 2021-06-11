@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author:XuMing(xuming624@qq.com)
-@description: 
+@description: 三元组构建图的节点和关系边
 """
 from relext.show_graph import ShowGraph
 
