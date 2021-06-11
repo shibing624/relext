@@ -81,7 +81,8 @@ class RelationExtract:
                 combines.append('@'.join([i, j]))
         return combines
 
-    def _search_attr(self, verb, child_dict_list, attr_list=None):
+    @staticmethod
+    def _search_attr(verb, child_dict_list, attr_list=None):
         """
         根据谓语动词找属性词
         :param verb:
@@ -102,7 +103,8 @@ class RelationExtract:
                     objs.append(vob[1])
         return objs
 
-    def _search_obj(self, verb, child_dict_list, obj_list=None):
+    @staticmethod
+    def _search_obj(verb, child_dict_list, obj_list=None):
         """
         根据谓语动词找宾语词
         :param verb:
@@ -163,7 +165,7 @@ class RelationExtract:
         抽取出施事者，谓词，受事者三元组
         :param words:
         :param postags:
-        :param srls:
+        :param srls: 语义角色标注类型，参考  https://github.com/shibing624/relext/blob/main/docs/srl_cpb.md
         "srl": [
                 [["阿婆主", "ARG0", 0, 1], ["来到", "PRED", 1, 2], ["北京立方庭", "ARG1", 2, 4]],
                 [["阿婆主", "ARG0", 0, 1], ["参观", "PRED", 4, 5], ["自然语义科技公司", "ARG1", 5, 9]]
@@ -189,44 +191,36 @@ class RelationExtract:
                 for srl_unit in srl:
                     # srl_unit format: ["阿婆主", "ARG0", 0, 1]
                     word, rel, begin, end = srl_unit[0], srl_unit[1], srl_unit[2], srl_unit[3]
-                    word_size = end - begin
-                    assert word_size > 0
                     if rel in subj_list:
-                        if word_size == 1:
-                            subj = word
-                        else:
-                            word_list = self._filter_ner_words(words_list, srl_unit)
-                            # 重点词在文本靠后
-                            subj = word_list[-1] if len(word_list) > 0 else word
+                        subj = self._get_last_word(words_list, srl_unit)
                     elif rel in verb_list:
                         verb = word
                     elif rel in obj_list:
-                        if word_size == 1:
-                            obj = word
-                        else:
-                            word_list = self._filter_ner_words(words_list, srl_unit)
-                            # 重点词在文本靠后
-                            obj = word_list[-1] if len(word_list) > 0 else word
+                        obj = self._get_last_word(words_list, srl_unit)
                 if subj and verb and obj:
                     ret.append([subj, verb, obj])
         return ret
 
-    def _filter_ner_words(self, words_list, triple):
+    @staticmethod
+    def _get_last_word(words_list, triple):
         """
-        过滤出跟命名实体相关的三元组
-        :param triples:
-        :param ners:
-        :return:
+        取多词组合的长词中的最后词
+        :param words_list:
+        :param triple:
+        :return: word
         """
-        words = []
-        begin, end = triple[2], triple[3]
-        for j in words_list[begin:end]:
-            wd, postag = j
-            if postag in self.ner_dict:
-                words.append(wd)
-        return words
+        wd, begin, end = triple[0], triple[2], triple[3]
+        words = words_list[begin:end]
+        if len(words) == 0:
+            word = ''
+        elif len(words) in [1, 2, 3]:
+            word = wd
+        else:
+            word = words[-1][0]  # 重点词在文本靠后
+        return word
 
-    def _get_entity_relation(self, ners, keywords, subsent_segs):
+    @staticmethod
+    def _get_entity_relation(ners, keywords, subsent_segs):
         """
         通过关键词与实体进行实体关系抽取
         :param ners: 实体
@@ -258,19 +252,22 @@ class RelationExtract:
         # 保存抽取的实体关系，即三元组
         triple_list = []
         for k, v in triple_dict.items():
-            triple_list.extend(v)
+            for i in v:
+                if i not in triple_list:
+                    triple_list.append(i)
         graph = Graph(triple_list)
         graph.show(html_path)
         logger.debug("save to graph done.")
 
     @staticmethod
-    def seg_to_sentence(text):
+    def seg_to_sentence(text, regex=r'[？?！!。；;：:\n\r\t ]'):
         """
-        利用标点符号，将文章进行短句切分处理
+        利用标点符号，将文章进行句子切分处理，保留逗号短句
+        :param regex:
         :param text: article
         :return:
         """
-        return [sentence for sentence in re.split(r'[，,？?！!。；;：:\n\r\t ]', text) if sentence]
+        return [sentence.strip() for sentence in re.split(regex, text) if sentence.strip()]
 
     def extract_triples(self, text, num_keywords=10):
         """
@@ -279,8 +276,6 @@ class RelationExtract:
         :param num_keywords:
         :return:
         """
-        if not text:
-            return
         # 存储实体关系抽取结果，三元组
         triple_dict = {}
         # 对文章进行去噪处理
@@ -316,22 +311,12 @@ class RelationExtract:
                 events += m_events
                 wordpos_sents.append([words, postags])
 
-        # 获取文章事件三元组
-        event_triples = []
-        for t in events:
-            name = t[0]
-            obj = t[2]
-            if len(name) > 1 and len(obj) > 1:
-                event_triples.append(t)
-        if event_triples:
-            triple_dict['event'] = event_triples
-
         # 获取文章关键词
         kw_triples = []
         keywords = [i[0] for i in self.text_keyword.extract_keywords(words_list, num_keywords)]
         for keyword in keywords:
             name = keyword
-            cate = '关键词'
+            cate = ''
             obj = '关键词'
             kw_triples.append([name, cate, obj])
         if kw_triples:
@@ -343,7 +328,7 @@ class RelationExtract:
                                             if i[1][0] in ['n', 'v'] and len(i[0]) > 1]).most_common()][:num_keywords]
         for wd in word_dict:
             name = wd
-            cate = '高频词'
+            cate = ''
             obj = '高频词'
             freq_triples.append([name, cate, obj])
         if freq_triples:
@@ -366,7 +351,7 @@ class RelationExtract:
         co_dict = self._get_coexist(wordpos_sents, list(ner_dict.keys()))
         for c in co_dict.keys():
             name = c.split('@')[0].split('/')[0]
-            cate = '关联'
+            cate = ''
             obj = c.split('@')[1].split('/')[0]
             if len(name) > 1 and len(obj) > 1:
                 coexist_triples.append([name, cate, obj])
@@ -378,7 +363,7 @@ class RelationExtract:
         entity_rels = self._get_entity_relation(ners, keywords, sents_seg)
         for e in set(entity_rels):
             name = e.split('->')[0]
-            cate = '关联'
+            cate = ''
             obj = e.split('->')[1]
             if len(name) > 1 and len(obj) > 1:
                 ner_keyword_triples.append([name, cate, obj])
@@ -398,4 +383,18 @@ class RelationExtract:
                 svo_triples.append(t)
         if svo_triples:
             triple_dict['svo'] = svo_triples
+
+        # 获取文章事件(施事者，谓词，受事者)三元组
+        event_triples = []
+        for t in events:
+            name = t[0]
+            obj = t[2]
+            if len(name) > 1 and len(obj) > 1 and (
+                    name in keywords or obj in keywords or
+                    name in ner_dict or obj in ner_dict or
+                    name in word_dict or obj in word_dict
+            ):
+                event_triples.append(t)
+        if event_triples:
+            triple_dict['event'] = event_triples
         return triple_dict

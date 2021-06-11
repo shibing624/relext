@@ -94,7 +94,8 @@ class RelTestCase(unittest.TestCase):
             "曹村辖区总面积约10平方公里，其中耕地132公顷。",
             "硫酸钙较为常用，其性质稳定，无嗅无味，微溶于水",
             "蔡竞，男，汉族，四川射洪人，西南财经大学经济学院毕业，经济学博士。",
-            " ",
+            "中国的首都北京",
+            "中国的首都为北京",
         ]
         outs = []
         for sent in sents:
@@ -102,7 +103,46 @@ class RelTestCase(unittest.TestCase):
             print(words, postags, srl, dep)
             m_triple = m._get_event_by_srl(words, postags, srl)
             print(m_triple)
+            dep_triple = m._get_svo_by_dep(words, postags, dep)
+            print(dep_triple)
             outs.append(m_triple)
+        self.assertEqual(outs[0], [])
+        self.assertEqual([['中国的首都', '为', '北京']], outs[4])
+
+    def test_deal_with_long_sent(self):
+        sents = [
+            "南京胖哥曾是铅球运动员",
+            "因白色标致牌轿车安全气囊弹开已无法行驶，吉某某即驾现场碰擦的黑色别克牌轿车沿中山东路往东快速逃窜，在洪武路和中山东路路口（第三现场）与多辆汽车发生碰撞，并将两名路人周某某（女，27岁，本市人）、陈某某（女，25岁，本市人）撞伤。",
+            "案件发生后，许多热心市民向警方报警并现场协助阻止犯罪，警方对热心群众的见义勇为行为表示敬佩和衷心感谢，南京的平安离不开广大人民群众的共同呵护。",
+            "今后，南京市公安机关将按照市委、市政府的部署，加强对各类风险隐患的排查整治，始终保持对违法犯罪行为严打高压态势，不断深化平安南京建设，全力保障人民群众生命财产安全。",
+            "据央视报道披露的细节，5月29日21时许，犯罪嫌疑人吉某某驾驶租来的白色轿车，在秦淮区金銮巷将其前妻撞倒在地，现场热心市民阻拦无果后，吉某某再次碾压该女子后逃离现场。",
+            "中国国家主席习近平访问韩国，并在首尔大学发表演讲。",
+        ]
+        outs = []
+        for sent in sents:
+            words, postags, srl, dep = m.parser.tok_parser(sent)
+            print(words, postags, srl, dep)
+            m_triple = m._get_event_by_srl(words, postags, srl)
+            print(m_triple)
+            dep_triple = m._get_svo_by_dep(words, postags, dep)
+            print(dep_triple)
+            outs.append(m_triple)
+            chunks = sent.split('，')
+            print("short:")
+            for chunk in chunks:
+                words, postags, srl, dep = m.parser.tok_parser(chunk)
+                m_triple = m._get_event_by_srl(words, postags, srl)
+                print(m_triple)
+                dep_triple = m._get_svo_by_dep(words, postags, dep)
+                print(dep_triple)
+        self.assertEqual(outs[0], [['南京胖哥', '是', '铅球运动员']])
+        self.assertEqual(outs[1], [['吉某某', '驾', '轿车'], ['碰撞', '发生', '汽车']])
+        self.assertEqual(outs[2], [['许多热心市民', '报警', '向警方'], ['警方', '表示', '感谢'], ['南京的平安', '离', '呵护']])
+        self.assertEqual(outs[3], [['南京市公安机关', '加强', '整治'], ['南京市公安机关', '整治', '隐患'], ['南京市公安机关', '保持', '态势'],
+                                   ['南京市公安机关', '深化', '平安南京建设'], ['南京市公安机关', '保障', '安全']])
+        self.assertEqual(outs[4], [['央视报道', '披露', '细节'], ['犯罪嫌疑人吉某某', '驾驶', '轿车'], ['犯罪嫌疑人吉某某', '撞倒', '其前妻'],
+                                   ['吉某某', '逃离', '现场']])
+        self.assertEqual(outs[5], [['中国国家主席习近平', '访问', '韩国'], ['中国国家主席习近平', '发表', '演讲']])
 
 
 if __name__ == '__main__':

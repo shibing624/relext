@@ -57,6 +57,6 @@ article3 = """
 
 if __name__ == '__main__':
     m = RelationExtract()
-    triples = m.extract_triples(article2)
+    triples = m.extract_triples(article3)
     print(triples)
     m.show_triples(triples)

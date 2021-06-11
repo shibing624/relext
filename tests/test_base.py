@@ -34,6 +34,15 @@ class BaseTestCase(unittest.TestCase):
         print(t)
         self.assertEqual(2, len(t))
 
+    def test_empty_extract(self):
+        """测试empty"""
+        a = [' ', '', '    ']
+        for i in a:
+            t = m.extract_triples(i)
+            print('len triple_dict,', len(t))
+            print(t)
+            self.assertEqual(0, len(t))
+
 
 if __name__ == '__main__':
     unittest.main()
