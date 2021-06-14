@@ -123,7 +123,7 @@ python3 setup.py install
 ```
 
 # Usage
-### 实体关系抽取
+### 语言学方法
 
 实体关系抽取结果是得到三元组（triple）。
 
@@ -175,6 +175,47 @@ PS:
 
 2. 南京胖哥事件
 ![南京胖哥事件](./docs/imgs/南京胖哥事件.png)
+
+### Pipeline方法
+先确定实体关系范围，再用分类器识别实体间的关系。
+
+示例[pipeline_demo.py](examples/pipeline_demo.py)
+
+```python
+import sys
+
+sys.path.append('..')
+from relext import RelationExtract
+
+article = """
+咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
+          """
+
+m = RelationExtract(relations={'place', 'time', 'person'})
+triples = m.extract_triples(article)
+print(triples)
+```
+
+### Joint方法
+
+联合训练，抽取文本实体间的关系。
+
+示例[pipeline_demo.py](examples/pipeline_demo.py)
+
+```python
+import sys
+
+sys.path.append('..')
+from relext import JointRelationExtract
+
+article = """
+咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
+          """
+
+m = JointRelationExtract()
+triples = m.extract_triples(article)
+print(triples)
+```
 
 
 # Dataset
