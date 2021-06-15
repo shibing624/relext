@@ -168,20 +168,12 @@ PS:
 - coexist: 实体共现词
 - ner_keyword: 实体与关键词的关联词
 
-### 示例效果
 
-示例[article_triples_demo.py](examples/article_triples_demo.py)
+### 深度模型方法
 
-1. 雷洋嫖娼事件
-![雷洋嫖娼事件](./docs/imgs/雷洋嫖娼事件.png)
+基于深度模型及标注样本训练模型，抽取文本实体间的关系。
 
-2. 南京胖哥事件
-![南京胖哥事件](./docs/imgs/南京胖哥事件.png)
-
-### Pipeline方法
-先确定实体关系范围，再用分类器识别实体间的关系。
-
-示例[pipeline_demo.py](examples/pipeline_demo.py)
+示例[deepmodel_demo.py](examples/deepmodel_demo.py)
 
 ```python
 import sys
@@ -193,31 +185,22 @@ article = """
 咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
           """
 
-m = RelationExtract(relations={'place', 'time', 'person'})
+m = RelationExtract(model_path='')
 triples = m.extract_triples(article)
 print(triples)
 ```
 
-### Joint方法
+### 示例效果
 
-联合训练，抽取文本实体间的关系。
+示例[article_triples_demo.py](examples/article_triples_demo.py)
 
-示例[pipeline_demo.py](examples/pipeline_demo.py)
+1. 雷洋嫖娼事件
+![雷洋嫖娼事件](./docs/imgs/雷洋嫖娼事件.png)
 
-```python
-import sys
+2. 南京胖哥事件
+![南京胖哥事件](./docs/imgs/南京胖哥事件.png)
 
-sys.path.append('..')
-from relext import JointRelationExtract
 
-article = """
-咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
-          """
-
-m = JointRelationExtract()
-triples = m.extract_triples(article)
-print(triples)
-```
 
 
 # Dataset
