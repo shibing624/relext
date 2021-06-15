@@ -2,9 +2,12 @@
 
 [![PyPI version](https://badge.fury.io/py/relext.svg)](https://badge.fury.io/py/relext)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![GitHub contributors](https://img.shields.io/github/contributors/shibing624/relext.svg)](https://github.com/shibing624/relext/graphs/contributors)
 [![License Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![Language](https://img.shields.io/badge/Language-Python-blue.svg)
-![Python3](https://img.shields.io/badge/Python-3.X-red.svg)
+[![python_vesion](https://img.shields.io/badge/Python-3.5%2B-green.svg)](requirements.txt)
+[![GitHub issues](https://img.shields.io/github/issues/shibing624/relext.svg)](https://github.com/shibing624/relext/issues)
+[![Wechat Group](http://vlog.sfyc.ltd/wechat_everyday/wxgroup_logo.png?imageView2/0/w/60/h/20)](#Contact)
+
 
 # relext
 RelExt: A Tool for Relation Extraction from Text.
@@ -299,9 +302,9 @@ Comment:
 
 # Reference
 
-- [Lin (2016). Neural Relation Extraction with Selective Attention over Instances.ACL](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/acl2016_nre.pdf)
+- [Lin,(2016). Neural Relation Extraction with Selective Attention over Instances.ACL](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/acl2016_nre.pdf)
 - [Feng,(2017). Effective Deep Memory Networks for Distant Supervised Relation Extraction. IJCAI](https://www.ijcai.org/proceedings/2017/0559.pdf)
-- [Logician: A Unified End-to-End Neural Approach for Open-Domain Information Extraction](https://arxiv.org/abs/1904.12535v1)
+- [Baidu,(2019). Logician: A Unified End-to-End Neural Approach for Open-Domain Information Extraction](https://arxiv.org/abs/1904.12535v1)
 - [Alexander Schutz,(2005). RelExt- A Tool for Relation Extraction from Text in Ontology Extension](https://github.com/shibing624/relext/blob/main/docs/RelExt_paper.pdf)
 - [TextGrapher](https://github.com/liuhuanyong/TextGrapher)
 - [pytorch-relation-extraction](https://github.com/ShomyLiu/pytorch-relation-extraction)
