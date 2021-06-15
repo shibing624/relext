@@ -302,7 +302,7 @@ Comment:
 - [Lin (2016). Neural Relation Extraction with Selective Attention over Instances.ACL](http://nlp.csai.tsinghua.edu.cn/~lyk/publications/acl2016_nre.pdf)
 - [Feng,(2017). Effective Deep Memory Networks for Distant Supervised Relation Extraction. IJCAI](https://www.ijcai.org/proceedings/2017/0559.pdf)
 - [Logician: A Unified End-to-End Neural Approach for Open-Domain Information Extraction](https://arxiv.org/abs/1904.12535v1)
-- [Alexander Schutz,(2005). RelExt- A Tool for Relation Extraction from Text in Ontology Extension](https://github.com/shibing624/relext/blob/main/docs/RelExt- A Tool for Relation Extraction from Text in Ontology Extension.pdf)
+- [Alexander Schutz,(2005). RelExt- A Tool for Relation Extraction from Text in Ontology Extension](https://github.com/shibing624/relext/blob/main/docs/RelExt_paper.pdf)
 - [TextGrapher](https://github.com/liuhuanyong/TextGrapher)
 - [pytorch-relation-extraction](https://github.com/ShomyLiu/pytorch-relation-extraction)
 - [Information-Extraction-Chinese](https://github.com/crownpku/Information-Extraction-Chinese)
