@@ -1,4 +1,4 @@
-<img src="docs/imgs/rel.png" width="100" />
+# relext
 
 [![PyPI version](https://badge.fury.io/py/relext.svg)](https://badge.fury.io/py/relext)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -9,10 +9,9 @@
 [![Wechat Group](http://vlog.sfyc.ltd/wechat_everyday/wxgroup_logo.png?imageView2/0/w/60/h/20)](#Contact)
 
 
-# relext
-RelExt: A Tool for Relation Extraction from Text.
+RelExt: A Tool for Relation Extraction from Text.(文本关系抽取工具)
 
-文本关系抽取工具。
+
 
 **Guide**
 
