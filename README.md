@@ -215,7 +215,7 @@ The <e1>microphone</e1> converts sound into an electrical <e2>signal</e2>.
 Cause-Effect(e1,e2)
 Comment:
 ```
-格式：第一行是sentence，第二行是两个entity的relation，第三行是备注。
+格式：每个case有三行，第一行是sentence，第二行是两个entity的relation，第三行是备注。
 
 ### Baidu Information Extraction 数据集
 
