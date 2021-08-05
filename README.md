@@ -109,8 +109,9 @@ RelExt: A Tool for Relation Extraction from Text.(文本关系抽取工具)
 
 # Install
 
-The project is based on Python 3.6+.
-Then, simply do:
+本项目基于 Python 3.6+.
+
+安装：
 
 ```
 pip3 install relext
