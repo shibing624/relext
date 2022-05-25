@@ -1,5 +1,3 @@
-# relext
-
 [![PyPI version](https://badge.fury.io/py/relext.svg)](https://badge.fury.io/py/relext)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![GitHub contributors](https://img.shields.io/github/contributors/shibing624/relext.svg)](https://github.com/shibing624/relext/graphs/contributors)
@@ -8,8 +6,8 @@
 [![GitHub issues](https://img.shields.io/github/issues/shibing624/relext.svg)](https://github.com/shibing624/relext/issues)
 [![Wechat Group](http://vlog.sfyc.ltd/wechat_everyday/wxgroup_logo.png?imageView2/0/w/60/h/20)](#Contact)
 
-
-RelExt: A Tool for Relation Extraction from Text.(文本关系抽取工具)
+# RelExt
+RelExt: Text Relation Extraction toolkit. 文本关系抽取工具。
 
 
 
