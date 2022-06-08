@@ -19,6 +19,7 @@ import numpy as np
 from loguru import logger
 import re
 import paddle2onnx
+import onnx
 import onnxruntime as ort
 from paddlenlp.transformers import AutoTokenizer
 from paddlenlp.utils.tools import get_bool_ids_greater_than, get_span
@@ -32,14 +33,18 @@ class InferBackend(object):
         model_file = os.path.join(static_model_dir, "inference.pdmodel")
         params_file = os.path.join(static_model_dir, "inference.pdiparams")
         float_onnx_file = os.path.join(static_model_dir, "model.onnx")
-        onnx_model = paddle2onnx.command.c_paddle_to_onnx(
-            model_file=model_file,
-            params_file=params_file,
-            opset_version=13,
-            enable_onnx_checker=True)
-        with open(float_onnx_file, "wb") as f:
-            f.write(onnx_model)
-
+        if not os.path.exists(float_onnx_file):
+            onnx_model = paddle2onnx.command.c_paddle_to_onnx(
+                model_file=model_file,
+                params_file=params_file,
+                opset_version=13,
+                enable_onnx_checker=True)
+            with open(float_onnx_file, "wb") as f:
+                f.write(onnx_model)
+        else:
+            onnx_model = onnx.load(float_onnx_file)
+            onnx.checker.check_model(onnx_model)
+            logger.debug('ONNX model loaded from {}'.format(float_onnx_file))
         if device == "gpu":
             providers = ['CUDAExecutionProvider']
         else:
@@ -195,7 +200,7 @@ class UIEPredictor(object):
         return results
 
     def _auto_splitter(self, input_texts, max_text_len, split_sentence=False):
-        '''
+        """
         Split the raw texts automatically for model inference.
         Args:
             input_texts (List[str]): input raw texts.
@@ -204,7 +209,7 @@ class UIEPredictor(object):
         return:
             short_input_texts (List[str]): the short input texts for model inference.
             input_mapping (dict): mapping between raw text and short input texts.
-        '''
+        """
         input_mapping = {}
         short_input_texts = []
         cnt_org = 0
@@ -285,8 +290,7 @@ class UIEPredictor(object):
                         offset += len(short_inputs[v])
                     else:
                         for i in range(len(short_results[v])):
-                            if 'start' not in short_results[v][
-                                i] or 'end' not in short_results[v][i]:
+                            if 'start' not in short_results[v][i] or 'end' not in short_results[v][i]:
                                 continue
                             short_results[v][i]['start'] += offset
                             short_results[v][i]['end'] += offset
@@ -309,7 +313,7 @@ class UIEPredictor(object):
             prompt = example["prompt"]
             for i in range(len(sentence_id)):
                 start, end = sentence_id[i]
-                if start < 0 and end >= 0:
+                if start < 0 <= end:
                     continue
                 if end < 0:
                     start += (len(prompt) + 1)
