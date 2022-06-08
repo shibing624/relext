@@ -3,7 +3,7 @@
 @author:XuMing(xuming624@qq.com)
 @description: 
 """
-from relext.utils.log import logger
+from loguru import logger
 
 
 class ShowGraph:
@@ -75,4 +75,4 @@ class ShowGraph:
         with open(html_path, 'w', encoding='utf-8') as f:
             html = self.base.replace('data_nodes', str(data_nodes)).replace('data_edges', str(data_edges))
             f.write(html)
-            logger.info("save graph html: {}".format(html_path))
+            logger.info("Save graph html: {}".format(html_path))

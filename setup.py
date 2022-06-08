@@ -1,23 +1,15 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import sys
-
 from setuptools import setup, find_packages
 
-from relext import __version__
+__version__ = None
+exec(open('relext/version.py').read())
 
 if sys.version_info < (3,):
     sys.exit('Sorry, Python3 is required.')
 
 with open('README.md', 'r', encoding='utf-8') as f:
     readme = f.read()
-
-with open('LICENSE', 'r', encoding='utf-8') as f:
-    license = f.read()
-
-with open('requirements.txt', 'r', encoding='utf-8') as f:
-    reqs = f.read()
 
 setup(
     name='relext',
@@ -41,11 +33,18 @@ setup(
         'Topic :: Text Processing :: Linguistic',
     ],
     keywords='relation extraction,relext,relation,extraction',
-    install_requires=reqs.strip().split('\n'),
+    install_requires=[
+        'loguru',
+        'hanlp',
+        'tabulate',
+        'importlib_metadata',
+        'nltk',
+        'paddlenlp',
+        'paddlepaddle',
+        'onnx',
+        'onnxruntime',
+    ],
     packages=find_packages(exclude=['tests']),
     package_dir={'relext': 'relext'},
-    package_data={
-        'relext': ['*.*', '../LICENSE', '../*.md', '../*.txt', 'embeddings/*',
-                     'utils/*', 'processors/*', 'bert/*', 'data/*.*'],
-    }
+    package_data={'relext': ['*.*', '*.md']}
 )

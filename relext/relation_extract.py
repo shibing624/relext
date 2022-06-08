@@ -8,11 +8,13 @@ refer: https://github.com/liuhuanyong/TextGrapher/text_grapher.py
 import os
 import re
 from collections import Counter
+from loguru import logger
 
 from relext.graph import Graph
 from relext.keywords_textrank import TextKeyword
 from relext.sentence_parser import SentenceParser
-from relext.utils.log import logger
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 default_ner_dict = {
     "nr": "人名",
@@ -20,18 +22,12 @@ default_ner_dict = {
     'nt': '机构名',
 }
 
-USER_DATA_DIR = os.path.expanduser('~/.relext/datasets/')
-if not os.path.exists(USER_DATA_DIR):
-    os.makedirs(USER_DATA_DIR)
-default_model_path = os.path.join(USER_DATA_DIR, '')  # TODO, add transformer model file name
-
 
 class RelationExtract:
-    def __init__(self, model_path='', ner_dict=None):
+    def __init__(self, ner_dict=None):
         self.text_keyword = TextKeyword()
         self.parser = SentenceParser()
         self.ner_dict = ner_dict if ner_dict else default_ner_dict
-        self.model_path = model_path if model_path else default_model_path
 
     @staticmethod
     def remove_noisy(content):

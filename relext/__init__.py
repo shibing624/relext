@@ -4,6 +4,6 @@
 @description: 
 """
 
-__version__ = "0.0.3"
 
+from relext.version import __version__
 from relext.relation_extract import RelationExtract

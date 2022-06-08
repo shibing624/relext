@@ -1,0 +1,20 @@
+{"content": "6月10日加班打车回家25元", "result_list": [{"text": "6月10日", "start": 0, "end": 5}], "prompt": "时间"}
+{"content": "6月10日加班打车回家25元", "result_list": [{"text": "家", "start": 10, "end": 11}], "prompt": "目的地"}
+{"content": "6月10日加班打车回家25元", "result_list": [{"text": "25", "start": 11, "end": 13}], "prompt": "费用"}
+{"content": "4月16日48元往返机场交通费", "result_list": [{"text": "4月16日", "start": 0, "end": 5}], "prompt": "时间"}
+{"content": "4月16日48元往返机场交通费", "result_list": [{"text": "48", "start": 5, "end": 7}], "prompt": "费用"}
+{"content": "4月16日48元往返机场交通费", "result_list": [{"text": "机场", "start": 10, "end": 12}], "prompt": "目的地"}
+{"content": "南京到上海，十月十七号高铁票，一百三十四块五", "result_list": [{"text": "南京", "start": 0, "end": 2}], "prompt": "出发地"}
+{"content": "南京到上海，十月十七号高铁票，一百三十四块五", "result_list": [{"text": "上海", "start": 3, "end": 5}], "prompt": "目的地"}
+{"content": "南京到上海，十月十七号高铁票，一百三十四块五", "result_list": [{"text": "十月十七号", "start": 6, "end": 11}], "prompt": "时间"}
+{"content": "南京到上海，十月十七号高铁票，一百三十四块五", "result_list": [{"text": "一百三十四块五", "start": 15, "end": 22}], "prompt": "费用"}
+{"content": "9月3日2点18分，加班打车回家，25元", "result_list": [{"text": "9月3日2点18分", "start": 0, "end": 9}], "prompt": "时间"}
+{"content": "9月3日2点18分，加班打车回家，25元", "result_list": [{"text": "家", "start": 15, "end": 16}], "prompt": "目的地"}
+{"content": "9月3日2点18分，加班打车回家，25元", "result_list": [{"text": "25", "start": 17, "end": 19}], "prompt": "费用"}
+{"content": "三月三号早上12点46加班，到公司54", "result_list": [{"text": "三月三号早上12点46", "start": 0, "end": 11}], "prompt": "时间"}
+{"content": "三月三号早上12点46加班，到公司54", "result_list": [{"text": "公司", "start": 15, "end": 17}], "prompt": "目的地"}
+{"content": "三月三号早上12点46加班，到公司54", "result_list": [{"text": "54", "start": 17, "end": 19}], "prompt": "费用"}
+{"content": "6月10日加班打车回家25元", "result_list": [], "prompt": "出发地"}
+{"content": "4月16日48元往返机场交通费", "result_list": [], "prompt": "出发地"}
+{"content": "9月3日2点18分，加班打车回家，25元", "result_list": [], "prompt": "出发地"}
+{"content": "三月三号早上12点46加班，到公司54", "result_list": [], "prompt": "出发地"}

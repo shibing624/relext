@@ -9,7 +9,7 @@ from collections import defaultdict
 
 
 class TextRankGraph:
-    """textrank图算法"""
+    """TextRank图算法"""
 
     def __init__(self):
         """init, no params"""

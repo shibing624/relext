@@ -4,14 +4,13 @@
 @description: hanlp代替LTP，NER和dep识别效果更好
 """
 import hanlp
-
-from relext.utils.log import logger
+from loguru import logger
 
 
 class SentenceParser:
     def __init__(self):
         self.model = hanlp.load(hanlp.pretrained.mtl.CLOSE_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)  # 世界最大中文语料库
-        logger.debug('use hanlp parser.')
+        logger.debug('Use hanlp parser.')
 
     def tok_parser(self, sentence):
         """

@@ -1,5 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/relext.svg)](https://badge.fury.io/py/relext)
-[![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Downloads](https://pepy.tech/badge/relext)](https://pepy.tech/project/relext)
 [![GitHub contributors](https://img.shields.io/github/contributors/shibing624/relext.svg)](https://github.com/shibing624/relext/graphs/contributors)
 [![License Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![python_vesion](https://img.shields.io/badge/Python-3.5%2B-green.svg)](requirements.txt)
@@ -69,6 +69,7 @@ RelExt: Text Relation Extraction toolkit. 文本关系抽取工具。
 实体识别与实体关系分类一起做的融合模型：
 - Seq2Seq Model
 - Transformer
+- T5(UIE)
 
 
 # Feature
@@ -256,7 +257,7 @@ Comment:
 
 # Cite
 
-如果你在研究中使用了relext，请按如下格式引用：
+如果你在研究中使用了`relext`，请按如下格式引用：
 
 ```latex
 @software{relext,
@@ -277,7 +278,7 @@ Comment:
 项目代码还很粗糙，如果大家对代码有所改进，欢迎提交回本项目，在提交之前，注意以下两点：
 
  - 在`tests`添加相应的单元测试
- - 使用`python setup.py test`来运行所有单元测试，确保所有单测都是通过的
+ - 使用`python -m pytest`来运行所有单元测试，确保所有单测都是通过的
 
 之后即可提交PR。
 

@@ -1,0 +1,20 @@
+{"content": "上海到北京机票1320元", "result_list": [{"text": "上海", "start": 0, "end": 2}], "prompt": "出发地"}
+{"content": "上海到北京机票1320元", "result_list": [{"text": "北京", "start": 3, "end": 5}], "prompt": "目的地"}
+{"content": "上海到北京机票1320元", "result_list": [{"text": "1320", "start": 7, "end": 11}], "prompt": "费用"}
+{"content": "上海虹桥到杭州东站高铁g7555共73元时间是10月14日", "result_list": [{"text": "上海虹桥", "start": 0, "end": 4}], "prompt": "出发地"}
+{"content": "上海虹桥到杭州东站高铁g7555共73元时间是10月14日", "result_list": [{"text": "杭州东站", "start": 5, "end": 9}], "prompt": "目的地"}
+{"content": "上海虹桥到杭州东站高铁g7555共73元时间是10月14日", "result_list": [{"text": "73", "start": 17, "end": 19}], "prompt": "费用"}
+{"content": "上海虹桥到杭州东站高铁g7555共73元时间是10月14日", "result_list": [{"text": "10月14日", "start": 23, "end": 29}], "prompt": "时间"}
+{"content": "昨天晚上十点加班打车回家58元", "result_list": [{"text": "昨天晚上十点", "start": 0, "end": 6}], "prompt": "时间"}
+{"content": "昨天晚上十点加班打车回家58元", "result_list": [{"text": "家", "start": 11, "end": 12}], "prompt": "目的地"}
+{"content": "昨天晚上十点加班打车回家58元", "result_list": [{"text": "58", "start": 12, "end": 14}], "prompt": "费用"}
+{"content": "2月20号从南山到光明二十元", "result_list": [{"text": "2月20号", "start": 0, "end": 5}], "prompt": "时间"}
+{"content": "2月20号从南山到光明二十元", "result_list": [{"text": "南山", "start": 6, "end": 8}], "prompt": "出发地"}
+{"content": "2月20号从南山到光明二十元", "result_list": [{"text": "光明", "start": 9, "end": 11}], "prompt": "目的地"}
+{"content": "2月20号从南山到光明二十元", "result_list": [{"text": "二十", "start": 11, "end": 13}], "prompt": "费用"}
+{"content": "从合肥到北京高铁两百元", "result_list": [{"text": "合肥", "start": 1, "end": 3}], "prompt": "出发地"}
+{"content": "从合肥到北京高铁两百元", "result_list": [{"text": "北京", "start": 4, "end": 6}], "prompt": "目的地"}
+{"content": "从合肥到北京高铁两百元", "result_list": [{"text": "两百", "start": 8, "end": 10}], "prompt": "费用"}
+{"content": "上海到北京机票1320元", "result_list": [], "prompt": "时间"}
+{"content": "昨天晚上十点加班打车回家58元", "result_list": [], "prompt": "出发地"}
+{"content": "从合肥到北京高铁两百元", "result_list": [], "prompt": "时间"}

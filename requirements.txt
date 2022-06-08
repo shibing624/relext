@@ -1,2 +1,9 @@
-colorlog
+loguru
 hanlp
+tabulate
+importlib_metadata
+nltk
+paddlenlp
+paddlepaddle
+onnx
+onnxruntime
