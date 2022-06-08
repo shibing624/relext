@@ -84,10 +84,9 @@ class UIEPredictor(object):
         self._max_seq_len = args.max_seq_len
         self._schema_tree = None
         self.set_schema(args.schema)
-        if args.device == 'cpu':
-            args.use_fp16 = False
+        args.use_fp16 = False
         self.inference_backend = InferBackend(
-            args.model_path_prefix, device=args.device, use_fp16=args.use_fp16)
+            args.model_path_prefix, device=args.device)
 
     def set_schema(self, schema):
         if isinstance(schema, dict) or isinstance(schema, str):
