@@ -147,9 +147,9 @@ class UIEPredictor(object):
             resource_file_urls = MODEL_MAP[model_name]['resource_file_urls']
             model_dir = os.path.join(USER_DATA_DIR, model_name)
             for key, val in resource_file_urls.items():
-                file_path = os.path.join(model_name, key)
+                file_path = os.path.join(model_dir, key)
                 if not os.path.exists(file_path):
-                    logger.info(f"Downloading resource files to {model_dir}")
+                    logger.info(f"Downloading resource files to {file_path}")
                     get_path_from_url(val, model_dir)
         logger.debug(f"Model dir: {model_dir}")
         self._tokenizer = AutoTokenizer.from_pretrained(model_dir)

@@ -33,11 +33,11 @@ MODEL_MAP = {
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_base_v0.1/model_state.pdparams",
             "model_config.json":
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_base/model_config.json",
-            "vocab_file":
+            "vocab.txt":
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_base/vocab.txt",
-            "special_tokens_map":
+            "special_tokens_map.json":
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_base/special_tokens_map.json",
-            "tokenizer_config":
+            "tokenizer_config.json":
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_base/tokenizer_config.json"
         }
     },
@@ -47,11 +47,11 @@ MODEL_MAP = {
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_tiny_v0.1/model_state.pdparams",
             "model_config.json":
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_tiny/model_config.json",
-            "vocab_file":
+            "vocab.txt":
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_tiny/vocab.txt",
-            "special_tokens_map":
+            "special_tokens_map.json":
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_tiny/special_tokens_map.json",
-            "tokenizer_config":
+            "tokenizer_config.json":
             "https://bj.bcebos.com/paddlenlp/taskflow/information_extraction/uie_tiny/tokenizer_config.json"
         }
     }
