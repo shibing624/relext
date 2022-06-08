@@ -117,6 +117,7 @@ def do_train(args):
 
             if global_step % args.valid_steps == 0 and rank == 0:
                 save_dir = os.path.join(args.save_dir, "model_%d" % global_step)
+                logger.info(f"Saving model to {save_dir}")
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
                 model_to_save = model._layers if isinstance(
@@ -133,6 +134,7 @@ def do_train(args):
                     )
                     best_f1 = f1
                     save_dir = os.path.join(args.save_dir, "model_best")
+                    logger.info(f"Saving new best model to {save_dir}")
                     model_to_save = model._layers if isinstance(
                         model, paddle.DataParallel) else model
                     model_to_save.save_pretrained(save_dir)

@@ -15,10 +15,12 @@
 import argparse
 import paddle
 import os
+from loguru import logger
 from relext.uie_model import UIE
 
 
 def export_to_static_graph(model_path, output_path='static'):
+    logger.info(f'Loading model from {model_path}')
     model = UIE.from_pretrained(model_path)
     model.eval()
 
@@ -37,6 +39,7 @@ def export_to_static_graph(model_path, output_path='static'):
         ])
     # Save in static graph model.
     save_path = os.path.join(output_path, "inference")
+    logger.info(f'Saving model to {save_path}')
     paddle.jit.save(model, save_path)
 
 
