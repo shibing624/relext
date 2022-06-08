@@ -8,9 +8,9 @@ import sys
 import unittest
 
 sys.path.append('..')
-from relext.relation_extract import RelationExtract
+from relext import RelationExtraction
 
-m = RelationExtract()
+m = RelationExtraction()
 
 
 class RelTestCase(unittest.TestCase):

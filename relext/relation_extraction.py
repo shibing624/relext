@@ -23,7 +23,7 @@ default_ner_dict = {
 }
 
 
-class RelationExtract:
+class RelationExtraction:
     def __init__(self, ner_dict=None):
         self.text_keyword = TextKeyword()
         self.parser = SentenceParser()
@@ -271,7 +271,7 @@ class RelationExtract:
         """
         return [sentence.strip() for sentence in re.split(regex, text) if sentence.strip()]
 
-    def extract_triples(self, text, num_keywords=10):
+    def extract(self, text, num_keywords=10):
         """
         三元组抽取
         :param text:

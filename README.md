@@ -144,7 +144,7 @@ article = """
           """
 
 m = RelationExtract()
-triples = m.extract_triples(article)
+triples = m.extract(article)
 print(triples)
 ```
 
@@ -188,7 +188,7 @@ article = """
           """
 
 m = RelationExtract(model_path='')
-triples = m.extract_triples(article)
+triples = m.extract(article)
 print(triples)
 ```
 

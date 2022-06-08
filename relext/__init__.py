@@ -6,4 +6,5 @@
 
 
 from relext.version import __version__
-from relext.relation_extract import RelationExtract
+from relext.relation_extraction import RelationExtraction
+from relext.information_extraction import InformationExtraction

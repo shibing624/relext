@@ -8,9 +8,9 @@ import sys
 import unittest
 
 sys.path.append('..')
-from relext.relation_extract import RelationExtract
+from relext import RelationExtraction
 
-m = RelationExtract()
+m = RelationExtraction()
 
 
 class BaseTestCase(unittest.TestCase):
@@ -21,7 +21,7 @@ class BaseTestCase(unittest.TestCase):
         阿婆主来到立方庭参观公司。阿婆主来到北京立方庭参观自然语义科技公司。
         萨哈夫说，伊拉克将同联合国继续保持合作。 i dont know. do you? 这是 啥？
         """
-        t = m.extract_triples(a)
+        t = m.extract(a)
         print('len triple_dict,', len(t))
         print(t)
         self.assertEqual(7, len(t))
@@ -29,7 +29,7 @@ class BaseTestCase(unittest.TestCase):
     def test_single_sent_extract(self):
         """测试single_sent_extract"""
         a = '阿婆主来到立方庭参观公司'
-        t = m.extract_triples(a)
+        t = m.extract(a)
         print('len triple_dict,', len(t))
         print(t)
         self.assertEqual(2, len(t))
@@ -38,7 +38,7 @@ class BaseTestCase(unittest.TestCase):
         """测试empty"""
         a = [' ', '', '    ']
         for i in a:
-            t = m.extract_triples(i)
+            t = m.extract(i)
             print('len triple_dict,', len(t))
             print(t)
             self.assertEqual(0, len(t))
