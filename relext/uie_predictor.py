@@ -22,6 +22,7 @@ import paddle
 from loguru import logger
 from paddle.utils.download import get_path_from_url
 from paddlenlp.transformers import AutoTokenizer
+from paddlenlp.datasets import load_dataset
 from paddlenlp.utils.tools import get_bool_ids_greater_than, get_span
 
 from relext.uie_model import UIE
@@ -125,14 +126,11 @@ class InferBackend:
         sess_options.inter_op_num_threads = self._num_threads
         self.predictor = ort.InferenceSession(
             fp16_model_file, sess_options=sess_options, providers=providers)
-        assert 'CUDAExecutionProvider' in self.predictor.get_providers(), f"The environment for GPU inference is not set properly. " \
-                                                                          "A possible cause is that you had installed both onnxruntime and onnxruntime-gpu. " \
-                                                                          "Please run the following commands to reinstall: \n " \
-                                                                          "1) pip uninstall -y onnxruntime onnxruntime-gpu \n 2) pip install onnxruntime-gpu"
-
-    def infer(self, input_dict: dict):
-        result = self.predictor.run(None, input_dict)
-        return result
+        assert 'CUDAExecutionProvider' in self.predictor.get_providers(), \
+            f"The environment for GPU inference is not set properly. " \
+            "A possible cause is that you had installed both onnxruntime and onnxruntime-gpu. " \
+            "Please run the following commands to reinstall: \n " \
+            "1) pip uninstall -y onnxruntime onnxruntime-gpu \n 2) pip install onnxruntime-gpu"
 
 
 class UIEPredictor(object):
@@ -155,14 +153,14 @@ class UIEPredictor(object):
         self._tokenizer = AutoTokenizer.from_pretrained(model_dir)
         self._position_prob = position_prob
         self._max_seq_len = max_seq_len
-        self._schema_tree = None
+        self.schema_tree = None
         self.set_schema(schema)
         self.inference_backend = InferBackend(model_dir, device=device)
 
     def set_schema(self, schema):
         if isinstance(schema, dict) or isinstance(schema, str):
             schema = [schema]
-        self._schema_tree = self._build_tree(schema)
+        self.schema_tree = self._build_tree(schema)
 
     @classmethod
     def _build_tree(cls, schema, name='root'):
@@ -198,6 +196,7 @@ class UIEPredictor(object):
             prompts.append(inputs[i]["prompt"])
         # max predict length should exclude the length of prompt and summary tokens
         max_predict_len = self._max_seq_len - len(max(prompts)) - 3
+
         short_input_texts, self.input_mapping = self._auto_splitter(
             input_texts, max_predict_len, split_sentence=False)
 
@@ -209,69 +208,80 @@ class UIEPredictor(object):
             "prompt": short_texts_prompts[i]
         } for i in range(len(short_input_texts))]
 
-        input_ids = []
-        token_type_ids = []
-        position_ids = []
-        attention_mask = []
-        offset_maps = []
-        for example in short_inputs:
-            encoded_inputs = self._tokenizer(
-                text=[example["prompt"]],
-                text_pair=[example["text"]],
-                stride=len(example["prompt"]),
-                truncation=True,
-                max_seq_len=self._max_seq_len,
-                pad_to_max_seq_len=True,
-                return_attention_mask=True,
-                return_position_ids=True,
-                return_dict=False)
-            encoded_inputs = encoded_inputs[0]
+        def read(inputs):
+            for example in inputs:
+                encoded_inputs = self._tokenizer(
+                    text=[example["prompt"]],
+                    text_pair=[example["text"]],
+                    stride=len(example["prompt"]),
+                    truncation=True,
+                    max_seq_len=self._max_seq_len,
+                    pad_to_max_seq_len=True,
+                    return_attention_mask=True,
+                    return_position_ids=True,
+                    return_dict=False)
+                encoded_inputs = encoded_inputs[0]
 
-            input_ids.append(encoded_inputs["input_ids"])
-            token_type_ids.append(encoded_inputs["token_type_ids"])
-            position_ids.append(encoded_inputs["position_ids"])
-            attention_mask.append(encoded_inputs["attention_mask"])
-            offset_maps.append(encoded_inputs["offset_mapping"])
+                tokenized_output = [
+                    encoded_inputs["input_ids"],
+                    encoded_inputs["token_type_ids"],
+                    encoded_inputs["position_ids"],
+                    encoded_inputs["attention_mask"],
+                    encoded_inputs["offset_mapping"]
+                ]
+                tokenized_output = [
+                    np.array(
+                        x, dtype="int64") for x in tokenized_output
+                ]
 
-        input_dict = {
-            "input_ids": np.array(
-                input_ids, dtype="int64"),
-            "token_type_ids": np.array(
-                token_type_ids, dtype="int64"),
-            "pos_ids": np.array(
-                position_ids, dtype="int64"),
-            "att_mask": np.array(
-                attention_mask, dtype="int64")
-        }
-        offset_maps = np.array(offset_maps, dtype="int64")
+                yield tuple(tokenized_output)
 
-        start_prob, end_prob = self._infer(input_dict)
+        infer_ds = load_dataset(read, inputs=short_inputs, lazy=False)
+        batch_sampler = paddle.io.BatchSampler(
+            dataset=infer_ds, batch_size=64, shuffle=False)
 
-        start_ids_list = get_bool_ids_greater_than(
-            start_prob, limit=self._position_prob, return_prob=True)
-        end_ids_list = get_bool_ids_greater_than(
-            end_prob, limit=self._position_prob, return_prob=True)
+        infer_data_loader = paddle.io.DataLoader(
+            dataset=infer_ds, batch_sampler=batch_sampler, return_list=True)
 
-        input_ids = input_dict['input_ids']
         sentence_ids = []
         probs = []
-        for start_ids, end_ids, ids, offset_map in zip(start_ids_list,
-                                                       end_ids_list,
-                                                       input_ids.tolist(),
-                                                       offset_maps.tolist()):
-            for i in reversed(range(len(ids))):
-                if ids[i] != 0:
-                    ids = ids[:i]
-                    break
-            span_list = get_span(start_ids, end_ids, with_prob=True)
-            sentence_id, prob = get_id_and_prob(span_list, offset_map)
-            sentence_ids.append(sentence_id)
-            probs.append(prob)
+        for batch in infer_data_loader:
+            input_ids, token_type_ids, pos_ids, att_mask, offset_maps = batch
+            if self.inference_backend._predictor_type == "paddle-inference":
+                self.inference_backend.input_handles[0].copy_from_cpu(input_ids.numpy())
+                self.inference_backend.input_handles[1].copy_from_cpu(token_type_ids.numpy())
+                self.inference_backend.input_handles[2].copy_from_cpu(pos_ids.numpy())
+                self.inference_backend.input_handles[3].copy_from_cpu(att_mask.numpy())
+                self.inference_backend.predictor.run()
+                start_prob = self.inference_backend.output_handle[0].copy_to_cpu().tolist()
+                end_prob = self.inference_backend.output_handle[1].copy_to_cpu().tolist()
+            else:
+                input_dict = {
+                    "input_ids": input_ids.numpy(),
+                    "token_type_ids": token_type_ids.numpy(),
+                    "pos_ids": pos_ids.numpy(),
+                    "att_mask": att_mask.numpy()
+                }
+                start_prob, end_prob = self.inference_backend.predictor.run(None, input_dict)
 
-        results = self._convert_ids_to_results(short_inputs, sentence_ids,
-                                               probs)
-        results = self._auto_joiner(results, short_input_texts,
-                                    self.input_mapping)
+            start_ids_list = get_bool_ids_greater_than(
+                start_prob, limit=self._position_prob, return_prob=True)
+            end_ids_list = get_bool_ids_greater_than(
+                end_prob, limit=self._position_prob, return_prob=True)
+
+            for start_ids, end_ids, ids, offset_map in zip(
+                    start_ids_list, end_ids_list,
+                    input_ids.tolist(), offset_maps.tolist()):
+                for i in reversed(range(len(ids))):
+                    if ids[i] != 0:
+                        ids = ids[:i]
+                        break
+                span_list = get_span(start_ids, end_ids, with_prob=True)
+                sentence_id, prob = get_id_and_prob(span_list, offset_map)
+                sentence_ids.append(sentence_id)
+                probs.append(prob)
+        results = self._convert_ids_to_results(short_inputs, sentence_ids, probs)
+        results = self._auto_joiner(results, short_input_texts, self.input_mapping)
         return results
 
     def _auto_splitter(self, input_texts, max_text_len, split_sentence=False):
@@ -417,11 +427,11 @@ class UIEPredictor(object):
         """
         results = [{} for _ in range(len(data))]
         # input check to early return
-        if len(data) < 1 or self._schema_tree is None:
+        if len(data) < 1 or self.schema_tree is None:
             return results
 
-        # copy to stay `self._schema_tree` unchanged
-        schema_list = self._schema_tree.children[:]
+        # copy to stay `self.schema_tree` unchanged
+        schema_list = self.schema_tree.children[:]
         while len(schema_list) > 0:
             node = schema_list.pop(0)
             examples = []
@@ -508,9 +518,6 @@ class UIEPredictor(object):
                 schema_list.append(child)
         return results
 
-    def _infer(self, data):
-        return self.inference_backend.infer(data)
-
     def _check_input_text(self, inputs):
         inputs = inputs[0]
         if isinstance(inputs, str):
@@ -556,8 +563,11 @@ class SchemaTree(object):
     def add_child(self, node):
         assert isinstance(
             node, SchemaTree
-        ), "The children of a node should be an instacne of SchemaTree."
+        ), "The children of a node should be an instance of SchemaTree."
         self.children.append(node)
+
+    def has_child(self):
+        return len(self.children) > 0
 
 
 def dbc2sbc(s):
