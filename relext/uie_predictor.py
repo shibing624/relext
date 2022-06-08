@@ -36,6 +36,7 @@ class InferBackend(object):
             model_file=model_file,
             params_file=params_file,
             save_file=float_onnx_file,
+            opset_version=13,
             enable_onnx_checker=True)
         logger.debug('ONNX model: {}'.format(float_onnx_file))
         if device == "gpu":
