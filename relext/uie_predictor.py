@@ -33,16 +33,12 @@ class InferBackend(object):
         model_file = os.path.join(static_model_dir, "inference.pdmodel")
         params_file = os.path.join(static_model_dir, "inference.pdiparams")
         float_onnx_file = os.path.join(static_model_dir, "model.onnx")
-        if not os.path.exists(float_onnx_file):
-            onnx_model = paddle2onnx.command.c_paddle_to_onnx(
-                model_file=model_file,
-                params_file=params_file,
-                save_file=float_onnx_file,
-                enable_onnx_checker=True)
-        else:
-            onnx_model = onnx.load(float_onnx_file)
-            onnx.checker.check_model(onnx_model)
-            logger.debug('ONNX model loaded from {}'.format(float_onnx_file))
+        onnx_model = paddle2onnx.command.c_paddle_to_onnx(
+            model_file=model_file,
+            params_file=params_file,
+            save_file=float_onnx_file,
+            enable_onnx_checker=True)
+        logger.debug('ONNX model: {}'.format(float_onnx_file))
         if device == "gpu":
             providers = ['CUDAExecutionProvider']
         else:
