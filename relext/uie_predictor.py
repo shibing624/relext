@@ -30,7 +30,7 @@ class InferBackend(object):
                  device='cpu'):
         logger.debug("Creating Engine ...")
         model_file = os.path.join(static_model_dir, "inference.pdmodel")
-        params_file = os.path.join(static_model_dir, "inference.pdparams")
+        params_file = os.path.join(static_model_dir, "inference.pdiparams")
         float_onnx_file = os.path.join(static_model_dir, "model.onnx")
         onnx_model = paddle2onnx.command.c_paddle_to_onnx(
             model_file=model_file,

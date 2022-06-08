@@ -32,7 +32,7 @@ def parse_args():
     )
     parser.add_argument(
         "--device",
-        default='cpu',
+        default='gpu',
         type=str,
         help="The device to use for inference. cpu or gpu", )
     args = parser.parse_args()
