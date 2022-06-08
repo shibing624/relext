@@ -35,9 +35,11 @@ class InferBackend(object):
         onnx_model = paddle2onnx.command.c_paddle_to_onnx(
             model_file=model_file,
             params_file=params_file,
-            save_file=float_onnx_file,
             opset_version=13,
             enable_onnx_checker=True)
+        # Must save ONNX model to a file before loading it into ORT
+        with open(float_onnx_file, "wb") as f:
+            f.write(onnx_model)
         logger.debug('ONNX model: {}'.format(float_onnx_file))
         if device == "gpu":
             providers = ['CUDAExecutionProvider']
