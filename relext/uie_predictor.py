@@ -12,55 +12,123 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import six
-import os
 import math
-import numpy as np
-from loguru import logger
+import os
 import re
-import paddle2onnx
-import onnxruntime as ort
+from multiprocessing import cpu_count
+
+import numpy as np
+import paddle
+from loguru import logger
+from paddle.utils.download import get_path_from_url
 from paddlenlp.transformers import AutoTokenizer
 from paddlenlp.utils.tools import get_bool_ids_greater_than, get_span
 
+from relext.uie_model import UIE
+from relext.utils import MODEL_MAP, USER_DATA_DIR
 
-class InferBackend(object):
+
+class InferBackend:
     def __init__(self,
-                 static_model_dir,
+                 model_dir,
                  device='cpu'):
-        logger.debug("Creating Engine ...")
-        model_file = os.path.join(static_model_dir, "inference.pdmodel")
-        params_file = os.path.join(static_model_dir, "inference.pdiparams")
-        float_onnx_file = os.path.join(static_model_dir, "model.onnx")
-        onnx_model = paddle2onnx.command.c_paddle_to_onnx(
-            model_file=model_file,
-            params_file=params_file,
-            opset_version=13,
-            enable_onnx_checker=True)
-        # Must save ONNX model to a file before loading it into ORT
-        with open(float_onnx_file, "wb") as f:
-            f.write(onnx_model)
-        logger.debug('ONNX model: {}'.format(float_onnx_file))
-        if device == "gpu":
-            providers = ['CUDAExecutionProvider']
-        else:
-            providers = ['CPUExecutionProvider']
-        logger.debug(f"Use device: {device}")
+        self._num_threads = math.ceil(cpu_count() / 2)
+        self.static_model_dir = os.path.join(model_dir, 'static')
+        self._static_model_file = os.path.join(self.static_model_dir, "inference.pdmodel")
+        self._static_params_file = os.path.join(self.static_model_dir, "inference.pdiparams")
+        if not os.path.exists(self._static_params_file):
+            # paddle动态图模型需要导出为静态图模型，才能预测部署
+            logger.info("Converting to the inference model cost a little time.")
+            logger.info(f'Loading model from {model_dir}')
+            model = UIE.from_pretrained(model_dir)
+            model.eval()
 
+            # Convert to static graph with specific input description
+            model = paddle.jit.to_static(
+                model,
+                input_spec=[
+                    paddle.static.InputSpec(
+                        shape=[None, None], dtype="int64", name='input_ids'),
+                    paddle.static.InputSpec(
+                        shape=[None, None], dtype="int64", name='token_type_ids'),
+                    paddle.static.InputSpec(
+                        shape=[None, None], dtype="int64", name='pos_ids'),
+                    paddle.static.InputSpec(
+                        shape=[None, None], dtype="int64", name='att_mask'),
+                ])
+            # Save in static graph model.
+            save_path = os.path.join(self.static_model_dir, "inference")
+            paddle.jit.save(model, save_path)
+            logger.info("The inference model saved:{}".format(self.static_model_dir))
+
+        # Default to use Paddle Inference
+        self._predictor_type = 'paddle-inference'
+        if self._predictor_type == "paddle-inference":
+            self._config = paddle.inference.Config(self._static_model_file,
+                                                   self._static_params_file)
+            self._prepare_static_mode()
+        else:
+            self._prepare_onnx_mode()
+        logger.debug(f"Use device: {device}")
+        logger.debug("Model Loaded.")
+
+    def _prepare_static_mode(self):
+        """
+        Construct the input data and predictor in the PaddlePaddle static mode.
+        """
+        if paddle.get_device() == 'cpu':
+            self._config.disable_gpu()
+            self._config.enable_mkldnn()
+        else:
+            self._config.enable_use_gpu(100, 0)
+            self._config.delete_pass("embedding_eltwise_layernorm_fuse_pass")
+        self._config.set_cpu_math_library_num_threads(self._num_threads)
+        self._config.switch_use_feed_fetch_ops(False)
+        self._config.disable_glog_info()
+        self._config.enable_memory_optim()
+        self.predictor = paddle.inference.create_predictor(self._config)
+        self.input_handles = [
+            self.predictor.get_input_handle(name)
+            for name in self.predictor.get_input_names()
+        ]
+        self.output_handle = [
+            self.predictor.get_output_handle(name)
+            for name in self.predictor.get_output_names()
+        ]
+
+    def _prepare_onnx_mode(self):
+        import onnx
+        import onnxruntime as ort
+        import paddle2onnx
+        from onnxconverter_common import float16
+        onnx_dir = self.static_model_dir
+        if not os.path.exists(onnx_dir):
+            os.mkdir(onnx_dir)
+        float_onnx_file = os.path.join(onnx_dir, 'model.onnx')
+        if not os.path.exists(float_onnx_file):
+            onnx_model = paddle2onnx.command.c_paddle_to_onnx(
+                model_file=self._static_model_file,
+                params_file=self._static_params_file,
+                opset_version=13,
+                enable_onnx_checker=True)
+            with open(float_onnx_file, "wb") as f:
+                f.write(onnx_model)
+        fp16_model_file = os.path.join(onnx_dir, 'fp16_model.onnx')
+        if not os.path.exists(fp16_model_file):
+            onnx_model = onnx.load_model(float_onnx_file)
+            trans_model = float16.convert_float_to_float16(
+                onnx_model, keep_io_types=True)
+            onnx.save_model(trans_model, fp16_model_file)
+        providers = ['CUDAExecutionProvider']
         sess_options = ort.SessionOptions()
+        sess_options.intra_op_num_threads = self._num_threads
+        sess_options.inter_op_num_threads = self._num_threads
         self.predictor = ort.InferenceSession(
-            onnx_model, sess_options=sess_options, providers=providers)
-        if device == "gpu":
-            try:
-                assert 'CUDAExecutionProvider' in self.predictor.get_providers()
-            except AssertionError:
-                raise AssertionError(
-                    f"The environment for GPU inference is not set properly. "
-                    "A possible cause is that you had installed both onnxruntime and onnxruntime-gpu. "
-                    "Please run the following commands to reinstall: \n "
-                    "1) pip uninstall -y onnxruntime onnxruntime-gpu \n 2) pip install onnxruntime-gpu"
-                )
-        logger.debug("Engine Created.")
+            fp16_model_file, sess_options=sess_options, providers=providers)
+        assert 'CUDAExecutionProvider' in self.predictor.get_providers(), f"The environment for GPU inference is not set properly. " \
+                                                                          "A possible cause is that you had installed both onnxruntime and onnxruntime-gpu. " \
+                                                                          "Please run the following commands to reinstall: \n " \
+                                                                          "1) pip uninstall -y onnxruntime onnxruntime-gpu \n 2) pip install onnxruntime-gpu"
 
     def infer(self, input_dict: dict):
         result = self.predictor.run(None, input_dict)
@@ -68,17 +136,28 @@ class InferBackend(object):
 
 
 class UIEPredictor(object):
-    def __init__(self, static_model_dir, schema, max_seq_len=512, position_prob=0.5, device='cpu'):
+    def __init__(self, model_name_or_path='uie-base', schema=(), max_seq_len=512, position_prob=0.5, device='cpu'):
         if device not in ['cpu', 'gpu']:
             raise ValueError(f"The device must be cpu or gpu, device error: {device}")
 
-        self._tokenizer = AutoTokenizer.from_pretrained("ernie-3.0-base-zh", use_faster=True)
+        if os.path.exists(os.path.join(model_name_or_path, 'model_state.pdparams')):
+            model_dir = model_name_or_path
+        else:
+            model_name = model_name_or_path
+            resource_file_urls = MODEL_MAP[model_name]['resource_file_urls']
+            model_dir = os.path.join(USER_DATA_DIR, model_name)
+            for key, val in resource_file_urls.items():
+                file_path = os.path.join(model_name, key)
+                if not os.path.exists(file_path):
+                    logger.info(f"Downloading resource files to {model_dir}")
+                    get_path_from_url(val, model_dir)
+        logger.debug(f"Model dir: {model_dir}")
+        self._tokenizer = AutoTokenizer.from_pretrained(model_dir)
         self._position_prob = position_prob
         self._max_seq_len = max_seq_len
         self._schema_tree = None
         self.set_schema(schema)
-        self.inference_backend = InferBackend(
-            static_model_dir, device=device)
+        self.inference_backend = InferBackend(model_dir, device=device)
 
     def set_schema(self, schema):
         if isinstance(schema, dict) or isinstance(schema, str):
@@ -432,7 +511,27 @@ class UIEPredictor(object):
     def _infer(self, data):
         return self.inference_backend.infer(data)
 
+    def _check_input_text(self, inputs):
+        inputs = inputs[0]
+        if isinstance(inputs, str):
+            if len(inputs) == 0:
+                raise ValueError(
+                    "Invalid inputs, input text should not be empty text, please check your input.".
+                        format(type(inputs)))
+            inputs = [inputs]
+        elif isinstance(inputs, list):
+            if not (isinstance(inputs[0], str) and len(inputs[0].strip()) > 0):
+                raise TypeError(
+                    "Invalid inputs, input text should be list of str, and first element of list should not be empty text.".
+                        format(type(inputs[0])))
+        else:
+            raise TypeError(
+                "Invalid inputs, input text should be str or list of str, but type of {} found!".
+                    format(type(inputs)))
+        return inputs
+
     def predict(self, input_data):
+        input_data = self._check_input_text(input_data)
         results = self._multi_stage_predict(input_data)
         return results
 

@@ -9,9 +9,9 @@ import sys
 sys.path.append('..')
 from relext import InformationExtraction
 
-schema = ['时间', '选手', '赛事名称']  # Define the schema for entity extraction
-m = InformationExtraction(static_model_dir='checkpoint/static/', schema=schema)
+m = InformationExtraction()
 
+schema = ['时间', '选手', '赛事名称']  # Define the schema for entity extraction
 texts = ["2月8日上午北京冬奥会自由式滑雪女子大跳台决赛中中国选手谷爱凌以188.25分获得金牌！"]
 outputs = m.extract(texts, schema)
 pprint(outputs[0])

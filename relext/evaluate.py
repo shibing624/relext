@@ -39,8 +39,7 @@ def evaluate(model, metric, data_loader):
     metric.reset()
     for batch in data_loader:
         input_ids, token_type_ids, att_mask, pos_ids, start_ids, end_ids = batch
-        start_prob, end_prob = model(input_ids, token_type_ids, att_mask,
-                                     pos_ids)
+        start_prob, end_prob = model(input_ids, token_type_ids, att_mask, pos_ids)
         start_ids = paddle.cast(start_ids, 'float32')
         end_ids = paddle.cast(end_ids, 'float32')
         num_correct, num_infer, num_label = metric.compute(start_prob, end_prob,

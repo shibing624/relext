@@ -8,7 +8,6 @@ import sys
 
 sys.path.append('..')
 from relext.finetune import do_train
-from relext.export_model import export_to_static_graph
 
 if __name__ == "__main__":
     # yapf: disable
@@ -41,5 +40,3 @@ if __name__ == "__main__":
 
     print(args)
     do_train(**vars(args))
-    # paddle 动态图模型需要导出为静态图模型，才能预测部署
-    export_to_static_graph(args.save_dir, args.save_static_model_dir)
