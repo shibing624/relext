@@ -40,7 +40,6 @@ setup(
         'importlib_metadata',
         'nltk',
         'paddlenlp',
-        'paddlepaddle',
         'onnx',
         'onnxruntime',
     ],

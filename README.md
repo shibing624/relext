@@ -113,15 +113,17 @@ RelExt: Text Relation Extraction toolkit. 文本关系抽取工具。
 安装：
 
 ```
-pip3 install relext
+pip install paddlepaddle-gpu # pip install paddlepaddle  for cpu
+pip install relext
 ```
 
 or
 
 ```
+pip install paddlepaddle-gpu # pip install paddlepaddle  for cpu
 git clone https://github.com/shibing624/relext.git
 cd relext
-python3 setup.py install
+pip install --no-deps .
 ```
 
 # Usage
