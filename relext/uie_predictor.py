@@ -16,6 +16,7 @@ import six
 import os
 import math
 import numpy as np
+from loguru import logger
 import re
 import paddle2onnx
 import onnxruntime as ort
@@ -25,25 +26,25 @@ from paddlenlp.utils.tools import get_bool_ids_greater_than, get_span
 
 class InferBackend(object):
     def __init__(self,
-                 model_path_prefix,
+                 static_model_dir,
                  device='cpu'):
-        print(">>> [InferBackend] Creating Engine ...")
+        logger.debug("Creating Engine ...")
+        model_file = os.path.join(static_model_dir, "inference.pdmodel")
+        params_file = os.path.join(static_model_dir, "inference.pdparams")
+        float_onnx_file = os.path.join(static_model_dir, "model.onnx")
         onnx_model = paddle2onnx.command.c_paddle_to_onnx(
-            model_file=model_path_prefix + ".pdmodel",
-            params_file=model_path_prefix + ".pdiparams",
+            model_file=model_file,
+            params_file=params_file,
             opset_version=13,
             enable_onnx_checker=True)
-        infer_model_dir = model_path_prefix.rsplit("/", 1)[0]
-        float_onnx_file = os.path.join(infer_model_dir, "model.onnx")
         with open(float_onnx_file, "wb") as f:
             f.write(onnx_model)
 
         if device == "gpu":
             providers = ['CUDAExecutionProvider']
-            print(">>> [InferBackend] Use GPU to inference ...")
         else:
             providers = ['CPUExecutionProvider']
-            print(">>> [InferBackend] Use CPU to inference ...")
+        logger.debug(f"Use device: {device}")
 
         sess_options = ort.SessionOptions()
         self.predictor = ort.InferenceSession(
@@ -66,27 +67,17 @@ class InferBackend(object):
 
 
 class UIEPredictor(object):
-    def __init__(self, args):
-        if not isinstance(args.device, six.string_types):
-            print(
-                ">>> [InferBackend] The type of device must be string, but the type you set is: ",
-                type(args.device))
-            exit(0)
-        if args.device not in ['cpu', 'gpu']:
-            print(
-                ">>> [InferBackend] The device must be cpu or gpu, but your device is set to:",
-                type(args.device))
-            exit(0)
+    def __init__(self, static_model_dir, schema, max_seq_len=512, position_prob=0.5, device='cpu'):
+        if device not in ['cpu', 'gpu']:
+            raise ValueError(f"The device must be cpu or gpu, device error: {device}")
 
-        self._tokenizer = AutoTokenizer.from_pretrained(
-            "ernie-3.0-base-zh", use_faster=True)
-        self._position_prob = args.position_prob
-        self._max_seq_len = args.max_seq_len
+        self._tokenizer = AutoTokenizer.from_pretrained("ernie-3.0-base-zh", use_faster=True)
+        self._position_prob = position_prob
+        self._max_seq_len = max_seq_len
         self._schema_tree = None
-        self.set_schema(args.schema)
-        args.use_fp16 = False
+        self.set_schema(schema)
         self.inference_backend = InferBackend(
-            args.model_path_prefix, device=args.device)
+            static_model_dir, device=device)
 
     def set_schema(self, schema):
         if isinstance(schema, dict) or isinstance(schema, str):
@@ -295,7 +286,7 @@ class UIEPredictor(object):
                     else:
                         for i in range(len(short_results[v])):
                             if 'start' not in short_results[v][
-                                    i] or 'end' not in short_results[v][i]:
+                                i] or 'end' not in short_results[v][i]:
                                 continue
                             short_results[v][i]['start'] += offset
                             short_results[v][i]['end'] += offset
@@ -421,9 +412,9 @@ class UIEPredictor(object):
                         ) and node.name in relations[i][j]["relations"].keys():
                             for k in range(
                                     len(relations[i][j]["relations"][
-                                        node.name])):
+                                            node.name])):
                                 new_relations[i].append(relations[i][j][
-                                    "relations"][node.name][k])
+                                                            "relations"][node.name][k])
                 relations = new_relations
 
             prefix = [[] for _ in range(len(data))]
@@ -448,7 +439,7 @@ class UIEPredictor(object):
 
 class SchemaTree(object):
     """
-    Implementataion of SchemaTree
+    Implementation of SchemaTree
     """
 
     def __init__(self, name='root', children=None):

@@ -15,9 +15,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     # Required parameters
     parser.add_argument(
-        "--model_path_prefix",
+        "--static_model_dir",
         type=str,
-        default='checkpoint/static/inference',
+        default='./checkpoint/static/',
         help="The path prefix of inference model to be used.", )
     parser.add_argument(
         "--position_prob",
@@ -30,6 +30,11 @@ def parse_args():
         type=int,
         help="The maximum input sequence length. Sequences longer than this will be split automatically.",
     )
+    parser.add_argument(
+        "--device",
+        default='cpu',
+        type=str,
+        help="The device to use for inference. cpu or gpu", )
     args = parser.parse_args()
     return args
 
@@ -43,11 +48,9 @@ def main():
     schema1 = ['法院', {'原告': '委托代理人'}, {'被告': '委托代理人'}]
     schema2 = [{'原告': ['出生日期', '委托代理人']}, {'被告': ['出生日期', '委托代理人']}]
 
-    args.device = 'cpu'
     args.schema = schema1
-    predictor = UIEPredictor(args)
+    predictor = UIEPredictor(args.static_model_dir, args.schema, args.max_seq_len, args.position_prob, args.device)
 
-    print("=" * 42)
     outputs = predictor.predict(texts)
     for text, output in zip(texts, outputs):
         print("1. Input text: ")
@@ -58,6 +61,7 @@ def main():
         pprint(output)
         print("-" * 42)
 
+    print("=" * 42)
     # Reset schema
     predictor.set_schema(schema2)
     outputs = predictor.predict(texts)

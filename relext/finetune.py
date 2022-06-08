@@ -29,19 +29,21 @@ from relext.evaluate import evaluate
 from relext.utils import set_seed, convert_example, reader, MODEL_MAP, USER_DATA_DIR
 
 
-def do_train(args):
-    paddle.set_device(args.device)
+def do_train(train_path, dev_path, model='uie-base', max_seq_len=512, batch_size=32, learning_rate=1e-5,
+             num_epochs=100, init_from_ckpt=None, device='gpu', seed=1000, logging_steps=10,
+             valid_steps=100, save_dir='./checkpoints/', **kwargs):
+    paddle.set_device(device)
     rank = paddle.distributed.get_rank()
     if paddle.distributed.get_world_size() > 1:
         paddle.distributed.init_parallel_env()
 
-    set_seed(args.seed)
+    set_seed(seed)
 
-    resource_file_urls = MODEL_MAP[args.model]['resource_file_urls']
-    pretrained_model_dir = os.path.join(USER_DATA_DIR, args.model)
+    resource_file_urls = MODEL_MAP[model]['resource_file_urls']
+    pretrained_model_dir = os.path.join(USER_DATA_DIR, model)
     logger.info(f"Downloading resource files to {pretrained_model_dir}")
     for key, val in resource_file_urls.items():
-        file_path = os.path.join(args.model, key)
+        file_path = os.path.join(model, key)
         if not os.path.exists(file_path):
             get_path_from_url(val, pretrained_model_dir)
 
@@ -50,47 +52,46 @@ def do_train(args):
 
     train_ds = load_dataset(
         reader,
-        data_path=args.train_path,
-        max_seq_len=args.max_seq_len,
+        data_path=train_path,
+        max_seq_len=max_seq_len,
         lazy=False)
     dev_ds = load_dataset(
         reader,
-        data_path=args.dev_path,
-        max_seq_len=args.max_seq_len,
+        data_path=dev_path,
+        max_seq_len=max_seq_len,
         lazy=False)
 
-    train_ds = train_ds.map(partial(convert_example, tokenizer=tokenizer, max_seq_len=args.max_seq_len))
-    dev_ds = dev_ds.map(partial(convert_example, tokenizer=tokenizer, max_seq_len=args.max_seq_len))
+    train_ds = train_ds.map(partial(convert_example, tokenizer=tokenizer, max_seq_len=max_seq_len))
+    dev_ds = dev_ds.map(partial(convert_example, tokenizer=tokenizer, max_seq_len=max_seq_len))
 
     train_batch_sampler = paddle.io.BatchSampler(
-        dataset=train_ds, batch_size=args.batch_size, shuffle=True)
+        dataset=train_ds, batch_size=batch_size, shuffle=True)
     train_data_loader = paddle.io.DataLoader(
         dataset=train_ds, batch_sampler=train_batch_sampler, return_list=True)
 
     dev_batch_sampler = paddle.io.BatchSampler(
-        dataset=dev_ds, batch_size=args.batch_size, shuffle=False)
+        dataset=dev_ds, batch_size=batch_size, shuffle=False)
     dev_data_loader = paddle.io.DataLoader(
         dataset=dev_ds, batch_sampler=dev_batch_sampler, return_list=True)
 
-    if args.init_from_ckpt and os.path.isfile(args.init_from_ckpt):
-        state_dict = paddle.load(args.init_from_ckpt)
+    if init_from_ckpt and os.path.isfile(init_from_ckpt):
+        state_dict = paddle.load(init_from_ckpt)
         model.set_dict(state_dict)
 
     if paddle.distributed.get_world_size() > 1:
         model = paddle.DataParallel(model)
 
     optimizer = paddle.optimizer.AdamW(
-        learning_rate=args.learning_rate, parameters=model.parameters())
+        learning_rate=learning_rate, parameters=model.parameters())
 
     criterion = paddle.nn.BCELoss()
     metric = SpanEvaluator()
 
     loss_list = []
     global_step = 0
-    best_step = 0
     best_f1 = 0
     tic_train = time.time()
-    for epoch in range(1, args.num_epochs + 1):
+    for epoch in range(1, num_epochs + 1):
         for batch in train_data_loader:
             input_ids, token_type_ids, att_mask, pos_ids, start_ids, end_ids = batch
             start_prob, end_prob = model(input_ids, token_type_ids, att_mask,
@@ -106,58 +107,43 @@ def do_train(args):
             loss_list.append(float(loss))
 
             global_step += 1
-            if global_step % args.logging_steps == 0 and rank == 0:
+            if global_step % logging_steps == 0 and rank == 0:
                 time_diff = time.time() - tic_train
                 loss_avg = sum(loss_list) / len(loss_list)
                 logger.info(
                     "global step %d, epoch: %d, loss: %.5f, speed: %.2f step/s"
                     % (global_step, epoch, loss_avg,
-                       args.logging_steps / time_diff))
+                       logging_steps / time_diff))
                 tic_train = time.time()
 
-            if global_step % args.valid_steps == 0 and rank == 0:
-                save_dir = os.path.join(args.save_dir, "model_step%d" % global_step)
-                logger.info(f"Saving model to {save_dir}")
-                if not os.path.exists(save_dir):
-                    os.makedirs(save_dir)
+            if global_step % valid_steps == 0 and rank == 0:
+                step_save_dir = os.path.join(save_dir, "model_step%d" % global_step)
+                logger.info(f"Saving model to {step_save_dir}")
+                if not os.path.exists(step_save_dir):
+                    os.makedirs(step_save_dir)
                 model_to_save = model._layers if isinstance(
                     model, paddle.DataParallel) else model
-                model_to_save.save_pretrained(save_dir)
-                tokenizer.save_pretrained(save_dir)
+                model_to_save.save_pretrained(step_save_dir)
+                tokenizer.save_pretrained(step_save_dir)
 
                 precision, recall, f1 = evaluate(model, metric, dev_data_loader)
                 logger.info("Evaluation precision: %.5f, recall: %.5f, F1: %.5f"
                             % (precision, recall, f1))
                 if f1 > best_f1:
-                    logger.info(
-                        f"best F1 performence has been updated: {best_f1:.5f} --> {f1:.5f}"
-                    )
+                    logger.info(f"best F1 performence has been updated: {best_f1:.5f} --> {f1:.5f}")
                     best_f1 = f1
-                    save_dir = args.save_dir
                     logger.info(f"Saving new best model to {save_dir}")
                     model_to_save = model._layers if isinstance(
                         model, paddle.DataParallel) else model
                     model_to_save.save_pretrained(save_dir)
                     tokenizer.save_pretrained(save_dir)
                     tic_train = time.time()
-        save_dir = os.path.join(args.save_dir, "model_epoch%d" % epoch)
-        logger.info(f"Saving model to {save_dir}")
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-        model_to_save = model._layers if isinstance(
-            model, paddle.DataParallel) else model
-        model_to_save.save_pretrained(save_dir)
-        tokenizer.save_pretrained(save_dir)
-
         precision, recall, f1 = evaluate(model, metric, dev_data_loader)
         logger.info("Evaluation precision: %.5f, recall: %.5f, F1: %.5f"
                     % (precision, recall, f1))
         if f1 > best_f1:
-            logger.info(
-                f"best F1 performence has been updated: {best_f1:.5f} --> {f1:.5f}"
-            )
+            logger.info(f"best F1 performence has been updated: {best_f1:.5f} --> {f1:.5f}")
             best_f1 = f1
-            save_dir = args.save_dir
             logger.info(f"Saving new best model to {save_dir}")
             model_to_save = model._layers if isinstance(
                 model, paddle.DataParallel) else model
@@ -191,5 +177,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     # yapf: enable
-
-    do_train(args)
+    logger.info(args)
+    do_train(**vars(args))
