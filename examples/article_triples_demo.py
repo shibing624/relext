@@ -6,7 +6,7 @@
 import sys
 
 sys.path.append('..')
-from relext.relation_extract import RelationExtract
+from relext import RelationExtract
 
 article1 = """
     女子以开金店为由，将丈夫骗进传销窝点后，拿走手机不知去向。被民警（派出所的）解救后，男子觉得不可思议。近日，咸阳市公安局彩虹分局捣毁一传销窝点，解救被骗群众9人。

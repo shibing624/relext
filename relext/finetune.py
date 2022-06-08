@@ -29,7 +29,7 @@ from relext.evaluate import evaluate
 from relext.utils import set_seed, convert_example, reader, MODEL_MAP, USER_DATA_DIR
 
 
-def do_train():
+def do_train(args):
     paddle.set_device(args.device)
     rank = paddle.distributed.get_rank()
     if paddle.distributed.get_world_size() > 1:
@@ -167,4 +167,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # yapf: enable
 
-    do_train()
+    do_train(args)
