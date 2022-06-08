@@ -19,7 +19,6 @@ import numpy as np
 from loguru import logger
 import re
 import paddle2onnx
-import onnx
 import onnxruntime as ort
 from paddlenlp.transformers import AutoTokenizer
 from paddlenlp.utils.tools import get_bool_ids_greater_than, get_span
