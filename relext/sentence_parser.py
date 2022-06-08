@@ -3,12 +3,13 @@
 @author:XuMing(xuming624@qq.com), lhy<lhy_in_blcu@126.com
 @description: hanlp代替LTP，NER和dep识别效果更好
 """
-import hanlp
+
 from loguru import logger
 
 
 class SentenceParser:
     def __init__(self):
+        import hanlp
         self.model = hanlp.load(hanlp.pretrained.mtl.CLOSE_TOK_POS_NER_SRL_DEP_SDP_CON_ELECTRA_SMALL_ZH)  # 世界最大中文语料库
         logger.debug('Use hanlp parser.')
 
