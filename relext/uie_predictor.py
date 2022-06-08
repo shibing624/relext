@@ -59,7 +59,7 @@ class InferBackend(object):
                     "Please run the following commands to reinstall: \n "
                     "1) pip uninstall -y onnxruntime onnxruntime-gpu \n 2) pip install onnxruntime-gpu"
                 )
-        print(">>> [InferBackend] Engine Created ...")
+        logger.debug("Engine Created.")
 
     def infer(self, input_dict: dict):
         result = self.predictor.run(None, input_dict)
