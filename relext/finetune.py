@@ -116,7 +116,7 @@ def do_train(args):
                 tic_train = time.time()
 
             if global_step % args.valid_steps == 0 and rank == 0:
-                save_dir = os.path.join(args.save_dir, "model_%d" % global_step)
+                save_dir = os.path.join(args.save_dir, "model_step%d" % global_step)
                 logger.info(f"Saving model to {save_dir}")
                 if not os.path.exists(save_dir):
                     os.makedirs(save_dir)
@@ -133,13 +133,35 @@ def do_train(args):
                         f"best F1 performence has been updated: {best_f1:.5f} --> {f1:.5f}"
                     )
                     best_f1 = f1
-                    save_dir = os.path.join(args.save_dir, "model_best")
+                    save_dir = args.save_dir
                     logger.info(f"Saving new best model to {save_dir}")
                     model_to_save = model._layers if isinstance(
                         model, paddle.DataParallel) else model
                     model_to_save.save_pretrained(save_dir)
                     tokenizer.save_pretrained(save_dir)
-                tic_train = time.time()
+            save_dir = os.path.join(args.save_dir, "model_epoch%d" % epoch)
+            logger.info(f"Saving model to {save_dir}")
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
+            model_to_save = model._layers if isinstance(
+                model, paddle.DataParallel) else model
+            model_to_save.save_pretrained(save_dir)
+            tokenizer.save_pretrained(save_dir)
+
+            precision, recall, f1 = evaluate(model, metric, dev_data_loader)
+            logger.info("Evaluation precision: %.5f, recall: %.5f, F1: %.5f"
+                        % (precision, recall, f1))
+            if f1 > best_f1:
+                logger.info(
+                    f"best F1 performence has been updated: {best_f1:.5f} --> {f1:.5f}"
+                )
+                best_f1 = f1
+                save_dir = args.save_dir
+                logger.info(f"Saving new best model to {save_dir}")
+                model_to_save = model._layers if isinstance(
+                    model, paddle.DataParallel) else model
+                model_to_save.save_pretrained(save_dir)
+                tokenizer.save_pretrained(save_dir)
 
 
 if __name__ == "__main__":
