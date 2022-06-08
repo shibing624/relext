@@ -40,8 +40,6 @@ setup(
         'importlib_metadata',
         'nltk',
         'paddlenlp',
-        'onnx',
-        'onnxruntime',
     ],
     packages=find_packages(exclude=['tests']),
     package_dir={'relext': 'relext'},

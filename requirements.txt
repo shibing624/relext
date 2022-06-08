@@ -4,5 +4,3 @@ tabulate
 importlib_metadata
 nltk
 paddlenlp
-onnx
-onnxruntime
