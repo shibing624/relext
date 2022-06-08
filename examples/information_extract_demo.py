@@ -4,6 +4,9 @@
 @description: 
 """
 from pprint import pprint
+import sys
+
+sys.path.append('..')
 from relext import InformationExtraction
 
 schema = ['时间', '选手', '赛事名称']  # Define the schema for entity extraction
