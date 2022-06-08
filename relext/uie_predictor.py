@@ -37,10 +37,8 @@ class InferBackend(object):
             onnx_model = paddle2onnx.command.c_paddle_to_onnx(
                 model_file=model_file,
                 params_file=params_file,
-                opset_version=13,
+                save_file=float_onnx_file,
                 enable_onnx_checker=True)
-            with open(float_onnx_file, "wb") as f:
-                f.write(onnx_model)
         else:
             onnx_model = onnx.load(float_onnx_file)
             onnx.checker.check_model(onnx_model)
