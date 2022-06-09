@@ -20,8 +20,8 @@ RelExt: Text Relation Extraction toolkit. 文本关系抽取工具。
 - [Usage](#usage)
 - [Dataset](#Dataset)
 - [Contact](#Contact)
-- [Cite](#Cite)
-- [Reference](#reference)
+- [Citation](#Citation)
+- [Reference](#Reference)
 
 # Question
 
