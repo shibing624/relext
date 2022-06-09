@@ -19,8 +19,6 @@ if __name__ == "__main__":
     parser.add_argument("--dev_path", default=None, type=str, help="The path of dev set.")
     parser.add_argument("--save_dir", default='./checkpoint/', type=str,
                         help="The output directory where the model checkpoints will be written.")
-    parser.add_argument("--save_static_model_dir", default='./checkpoint/static/', type=str,
-                        help="The path of model parameter in static graph to be saved.")
     parser.add_argument("--max_seq_len", default=512, type=int, help="The maximum input sequence length. "
                                                                      "Sequences longer than this will be split automatically.")
     parser.add_argument("--num_epochs", default=100, type=int, help="Total number of training epochs to perform.")
@@ -30,7 +28,7 @@ if __name__ == "__main__":
                         help="The interval steps to evaluate model performance.")
     parser.add_argument('--device', choices=['cpu', 'gpu'], default="gpu",
                         help="Select which device to train model, defaults to gpu.")
-    parser.add_argument("--model", choices=["uie-base", "uie-tiny"], default="uie-base", type=str,
+    parser.add_argument("--model_name_or_path", choices=["uie-base", "uie-tiny"], default="uie-base", type=str,
                         help="Select the pretrained model for few-shot learning.")
     parser.add_argument("--init_from_ckpt", default=None, type=str,
                         help="The path of model parameters for initialization.")

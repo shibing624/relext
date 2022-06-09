@@ -29,37 +29,41 @@ from relext.evaluate import evaluate
 from relext.utils import set_seed, convert_example, reader, MODEL_MAP, USER_DATA_DIR
 
 
-def do_train(train_path, dev_path, model='uie-base', max_seq_len=512, batch_size=32, learning_rate=1e-5,
+def do_train(train_path, dev_path, model_name_or_path='uie-base', max_seq_len=512, batch_size=32, learning_rate=1e-5,
              num_epochs=100, init_from_ckpt=None, device='gpu', seed=1000, logging_steps=10,
-             valid_steps=100, save_dir='./checkpoints/', **kwargs):
+             valid_steps=100, save_dir='./checkpoint/', **kwargs):
     paddle.set_device(device)
     rank = paddle.distributed.get_rank()
     if paddle.distributed.get_world_size() > 1:
         paddle.distributed.init_parallel_env()
-
     set_seed(seed)
 
-    resource_file_urls = MODEL_MAP[model]['resource_file_urls']
-    pretrained_model_dir = os.path.join(USER_DATA_DIR, model)
-    logger.info(f"Downloading resource files to {pretrained_model_dir}")
-    for key, val in resource_file_urls.items():
-        file_path = os.path.join(model, key)
-        if not os.path.exists(file_path):
-            get_path_from_url(val, pretrained_model_dir)
+    if os.path.exists(os.path.join(model_name_or_path, 'model_state.pdparams')):
+        model_dir = model_name_or_path
+    else:
+        model_name = model_name_or_path
+        model_dir = os.path.join(USER_DATA_DIR, model_name)
+        resource_file_urls = MODEL_MAP[model_name]['resource_file_urls']
+        for key, val in resource_file_urls.items():
+            file_path = os.path.join(model_dir, key)
+            if not os.path.exists(file_path):
+                logger.info(f"Downloading resource files to {file_path}")
+                get_path_from_url(val, model_dir)
+    logger.debug(f"Model dir: {model_dir}")
 
-    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_dir)
-    model = UIE.from_pretrained(pretrained_model_dir)
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    model = UIE.from_pretrained(model_dir)
 
     train_ds = load_dataset(
         reader,
-        data_path=train_path,
-        max_seq_len=max_seq_len,
-        lazy=False)
+        data_files=train_path,
+        lazy=False,
+        max_seq_len=max_seq_len)
     dev_ds = load_dataset(
         reader,
-        data_path=dev_path,
-        max_seq_len=max_seq_len,
-        lazy=False)
+        data_files=dev_path,
+        lazy=False,
+        max_seq_len=max_seq_len)
 
     train_ds = train_ds.map(partial(convert_example, tokenizer=tokenizer, max_seq_len=max_seq_len))
     dev_ds = dev_ds.map(partial(convert_example, tokenizer=tokenizer, max_seq_len=max_seq_len))
@@ -159,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", default=1e-5, type=float, help="The initial learning rate for Adam.")
     parser.add_argument("--train_path", default=None, type=str, help="The path of train set.")
     parser.add_argument("--dev_path", default=None, type=str, help="The path of dev set.")
-    parser.add_argument("--save_dir", default='./checkpoint', type=str,
+    parser.add_argument("--save_dir", default='./checkpoint/', type=str,
                         help="The output directory where the model checkpoints will be written.")
     parser.add_argument("--max_seq_len", default=512, type=int, help="The maximum input sequence length. "
                                                                      "Sequences longer than this will be split automatically.")
@@ -170,7 +174,7 @@ if __name__ == "__main__":
                         help="The interval steps to evaluate model performance.")
     parser.add_argument('--device', choices=['cpu', 'gpu'], default="gpu",
                         help="Select which device to train model, defaults to gpu.")
-    parser.add_argument("--model", choices=["uie-base", "uie-tiny"], default="uie-base", type=str,
+    parser.add_argument("--model_name_or_path", choices=["uie-base", "uie-tiny"], default="uie-base", type=str,
                         help="Select the pretrained model for few-shot learning.")
     parser.add_argument("--init_from_ckpt", default=None, type=str,
                         help="The path of model parameters for initialization.")

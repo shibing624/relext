@@ -30,9 +30,7 @@ from relext.utils import MODEL_MAP, USER_DATA_DIR
 
 
 class InferBackend:
-    def __init__(self,
-                 model_dir,
-                 device='cpu'):
+    def __init__(self,  model_dir, device='cpu'):
         self._num_threads = math.ceil(cpu_count() / 2)
         self.static_model_dir = os.path.join(model_dir, 'static')
         self._static_model_file = os.path.join(self.static_model_dir, "inference.pdmodel")
@@ -142,8 +140,8 @@ class UIEPredictor(object):
             model_dir = model_name_or_path
         else:
             model_name = model_name_or_path
-            resource_file_urls = MODEL_MAP[model_name]['resource_file_urls']
             model_dir = os.path.join(USER_DATA_DIR, model_name)
+            resource_file_urls = MODEL_MAP[model_name]['resource_file_urls']
             for key, val in resource_file_urls.items():
                 file_path = os.path.join(model_dir, key)
                 if not os.path.exists(file_path):
@@ -236,7 +234,7 @@ class UIEPredictor(object):
 
                 yield tuple(tokenized_output)
 
-        infer_ds = load_dataset(read, inputs=short_inputs, lazy=False)
+        infer_ds = load_dataset(read, data_files=short_inputs, lazy=False)
         batch_sampler = paddle.io.BatchSampler(
             dataset=infer_ds, batch_size=64, shuffle=False)
 
