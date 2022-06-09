@@ -234,7 +234,7 @@ class UIEPredictor(object):
 
                 yield tuple(tokenized_output)
 
-        infer_ds = load_dataset(read, data_files=short_inputs, lazy=False)
+        infer_ds = load_dataset(read, inputs=short_inputs, lazy=False)
         batch_sampler = paddle.io.BatchSampler(
             dataset=infer_ds, batch_size=64, shuffle=False)
 
