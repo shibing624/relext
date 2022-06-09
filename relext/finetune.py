@@ -98,8 +98,7 @@ def do_train(train_path, dev_path, model_name_or_path='uie-base', max_seq_len=51
     for epoch in range(1, num_epochs + 1):
         for batch in train_data_loader:
             input_ids, token_type_ids, att_mask, pos_ids, start_ids, end_ids = batch
-            start_prob, end_prob = model(input_ids, token_type_ids, att_mask,
-                                         pos_ids)
+            start_prob, end_prob = model(input_ids, token_type_ids, att_mask, pos_ids)
             start_ids = paddle.cast(start_ids, 'float32')
             end_ids = paddle.cast(end_ids, 'float32')
             loss_start = criterion(start_prob, start_ids)
@@ -116,8 +115,7 @@ def do_train(train_path, dev_path, model_name_or_path='uie-base', max_seq_len=51
                 loss_avg = sum(loss_list) / len(loss_list)
                 logger.info(
                     "global step %d, epoch: %d, loss: %.5f, speed: %.2f step/s"
-                    % (global_step, epoch, loss_avg,
-                       logging_steps / time_diff))
+                    % (global_step, epoch, loss_avg, logging_steps / time_diff))
                 tic_train = time.time()
 
             if global_step % valid_steps == 0 and rank == 0:
@@ -134,7 +132,7 @@ def do_train(train_path, dev_path, model_name_or_path='uie-base', max_seq_len=51
                 logger.info("Evaluation precision: %.5f, recall: %.5f, F1: %.5f"
                             % (precision, recall, f1))
                 if f1 > best_f1:
-                    logger.info(f"best F1 performence has been updated: {best_f1:.5f} --> {f1:.5f}")
+                    logger.info(f"best F1 performance has been updated: {best_f1:.5f} --> {f1:.5f}")
                     best_f1 = f1
                     logger.info(f"Saving new best model to {save_dir}")
                     model_to_save = model._layers if isinstance(
@@ -142,11 +140,12 @@ def do_train(train_path, dev_path, model_name_or_path='uie-base', max_seq_len=51
                     model_to_save.save_pretrained(save_dir)
                     tokenizer.save_pretrained(save_dir)
                     tic_train = time.time()
+        # Save model every epoch
         precision, recall, f1 = evaluate(model, metric, dev_data_loader)
         logger.info("Evaluation precision: %.5f, recall: %.5f, F1: %.5f"
                     % (precision, recall, f1))
         if f1 > best_f1:
-            logger.info(f"best F1 performence has been updated: {best_f1:.5f} --> {f1:.5f}")
+            logger.info(f"best F1 performance has been updated: {best_f1:.5f} --> {f1:.5f}")
             best_f1 = f1
             logger.info(f"Saving new best model to {save_dir}")
             model_to_save = model._layers if isinstance(

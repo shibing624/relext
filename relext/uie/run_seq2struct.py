@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-import logging
+
 import argparse
 import math
 import os
@@ -336,9 +336,7 @@ def test(args, model, tokenizer):
 def train(args, model, tokenizer):
 
     set_seed(args)
-
     generate_max_length = args.max_target_length
-
     writer = get_writer(args)
 
     # Distributed Setting

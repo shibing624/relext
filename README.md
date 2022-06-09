@@ -106,6 +106,10 @@ RelExt: Text Relation Extraction toolkit. 文本关系抽取工具。
 2. 模型：训练Seq2Seq的端到端模型[Logician](https://arxiv.org/abs/1904.12535v1),
 3. 效果：评估训练的Logician模型，在开放域信息抽取，包括动词介词，名词性短语，描述性短语和上下位关系抽取，paper效果F1：0.431。
 
+#### T5模型
+
+通过基于schema的prompt机制，将句子转换为相应的SSI（structural schema instructor），然后利用T5模型进行识别相应的槽位。
+
 # Install
 
 本项目基于 Python 3.6+.
@@ -129,21 +133,21 @@ pip install --no-deps .
 # Usage
 ### 语言学方法
 
-实体关系抽取结果是得到三元组（triple）。
+实体关系抽取结果是得到三元组（triple）,基于HanLP进行实体识别（ner）、语义角色标注（srl）和依存句法分析（dep），得到关系三元组。
 
-示例[base_demo.py](examples/base_demo.py)
+example: [examples/relation_extract_demo.py](examples/relation_extract_demo.py)
 
 ```python
 import sys
 
 sys.path.append('..')
-from relext import RelationExtract
+from relext import RelationExtraction
 
 article = """
 咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
           """
 
-m = RelationExtract()
+m = RelationExtraction()
 triples = m.extract(article)
 print(triples)
 ```
@@ -161,7 +165,6 @@ output:
 'event': [['韩立明', '抓住', '主犯姚丽丽'], ['韩立明', '立', '二等功']]}
 ```
 
-PS:
 - event: 施事者，谓语主词，受事者三元组
 - svo: 主谓宾三元组
 - keyword: 关键词
@@ -173,35 +176,62 @@ PS:
 
 ### 深度模型方法
 
-基于深度模型及标注样本训练模型，抽取文本实体间的关系。
+基于UIE（[Universal Information Extraction. ACL](https://aclanthology.org/2022.acl-long.395/)）深度模型，进行通用信息抽取。
+有以下能力：
+- 实体抽取
+- 关系抽取
+- 事件抽取
+- 情感抽取
 
-示例[deepmodel_demo.py](examples/deepmodel_demo.py)
+以“In 1997, Steve was excited to become the CEO of Apple.”为例，各个任务的目标结构为:
+
+- 实体：Steve - 人物实体、Apple - 组织机构实体
+- 关系：(Steve, Work For Apple)
+- 事件：{类别: 就职事件, 触发词: become, 论元: [[雇主, Apple], [雇员, Steve]]}
+- 情感：(exicted, become the CEO of Apple, Positive)
+
+example: [examples/information_extract_demo.py](examples/information_extract_demo.py)
 
 ```python
+from pprint import pprint
 import sys
 
 sys.path.append('..')
-from relext import RelationExtract
+from relext import InformationExtraction
 
-article = """
-咸阳市公安局在解放路街角捣毁一传销窝点，韩立明抓住主犯姚丽丽立下二等功。彩虹分局西区派出所民警全员出动查处有功。
-          """
+m = InformationExtraction()
 
-m = RelationExtract(model_path='')
-triples = m.extract(article)
-print(triples)
+schema = ['时间', '选手', '赛事名称']  # Define the schema for entity extraction
+texts = ["2月8日上午北京冬奥会自由式滑雪女子大跳台决赛中中国选手谷爱凌以188.25分获得金牌！"]
+outputs = m.extract(texts, schema)
+pprint(outputs[0])
+```
+
+output:
+```shell
+{'时间': [{'end': 6,
+         'probability': 0.9857378532924486,
+         'start': 0,
+         'text': '2月8日上午'}],
+ '赛事名称': [{'end': 23,
+           'probability': 0.8503084470436519,
+           'start': 6,
+           'text': '北京冬奥会自由式滑雪女子大跳台决赛'}],
+ '选手': [{'end': 31,
+         'probability': 0.8981546274821781,
+         'start': 28,
+         'text': '谷爱凌'}]}
 ```
 
 ### 示例效果
 
-示例[article_triples_demo.py](examples/article_triples_demo.py)
+example: [examples/article_triples_extract_demo.py](examples/article_triples_extract_demo.py)
 
 1. 雷洋嫖娼事件
 ![雷洋嫖娼事件](./docs/imgs/雷洋嫖娼事件.png)
 
 2. 南京胖哥事件
 ![南京胖哥事件](./docs/imgs/南京胖哥事件.png)
-
 
 
 
@@ -247,17 +277,21 @@ Comment:
   ]
 }
 ```
+### Baidu CCKS 2022 通用信息抽取比赛数据集
+
+[CCKS 2022 通用信息抽取比赛数据集](https://aistudio.baidu.com/aistudio/competition/detail/161/0/datasets)
+
+
 # Contact
 
-- Issue(建议)：[![GitHub issues](https://img.shields.io/github/issues/shibing624/relext.svg)](https://github.com/shibing624/relext/issues)
+- Issue(建议)
+  ：[![GitHub issues](https://img.shields.io/github/issues/shibing624/relext.svg)](https://github.com/shibing624/relext/issues)
 - 邮件我：xuming: xuming624@qq.com
-- 微信我：
-加我*微信号：xuming624, 备注：个人名称-NLP* 进NLP交流群。
+- 微信我：加我*微信号：xuming624*, 进Python-NLP交流群，备注：*姓名-公司名-NLP*
 
-<img src="docs/wechat.jpeg" width="200" />
+<img src="https://github.com/shibing624/relext/blob/main/docs/wechat.jpeg" width="200" />
 
-
-# Cite
+# Citation
 
 如果你在研究中使用了`relext`，请按如下格式引用：
 
@@ -296,3 +330,4 @@ Comment:
 - [Information-Extraction-Chinese](https://github.com/crownpku/Information-Extraction-Chinese)
 - [Entity-Relation-Extraction](https://github.com/yuanxiaosc/Entity-Relation-Extraction)
 - [2019语言与智能技术竞赛](http://lic2019.ccf.org.cn/kg)
+- [Yaojie Lu,(2022). Unified Structure Generation for Universal Information Extraction. ACL](https://aclanthology.org/2022.acl-long.395/)

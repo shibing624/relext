@@ -15,6 +15,18 @@ schema = ['时间', '选手', '赛事名称']  # Define the schema for entity ex
 texts = ["2月8日上午北京冬奥会自由式滑雪女子大跳台决赛中中国选手谷爱凌以188.25分获得金牌！"]
 outputs = m.extract(texts, schema)
 pprint(outputs[0])
+# {'时间': [{'end': 6,
+#          'probability': 0.9857378532924486,
+#          'start': 0,
+#          'text': '2月8日上午'}],
+#  '赛事名称': [{'end': 23,
+#            'probability': 0.8503084470436519,
+#            'start': 6,
+#            'text': '北京冬奥会自由式滑雪女子大跳台决赛'}],
+#  '选手': [{'end': 31,
+#          'probability': 0.8981546274821781,
+#          'start': 28,
+#          'text': '谷爱凌'}]}
 
 # 事件抽取
 schema = {'地震触发词': ['地震强度', '时间', '震中位置', '震源深度']}  # Define the schema for event extraction
