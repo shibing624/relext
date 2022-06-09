@@ -2,7 +2,7 @@
 [![Downloads](https://pepy.tech/badge/relext)](https://pepy.tech/project/relext)
 [![GitHub contributors](https://img.shields.io/github/contributors/shibing624/relext.svg)](https://github.com/shibing624/relext/graphs/contributors)
 [![License Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![python_vesion](https://img.shields.io/badge/Python-3.5%2B-green.svg)](requirements.txt)
+[![python_vesion](https://img.shields.io/badge/Python-3.6%2B-green.svg)](requirements.txt)
 [![GitHub issues](https://img.shields.io/github/issues/shibing624/relext.svg)](https://github.com/shibing624/relext/issues)
 [![Wechat Group](http://vlog.sfyc.ltd/wechat_everyday/wxgroup_logo.png?imageView2/0/w/60/h/20)](#Contact)
 
@@ -108,7 +108,8 @@ RelExt: Text Relation Extraction toolkit. 文本关系抽取工具。
 
 #### T5模型
 
-通过基于schema的prompt机制，将句子转换为相应的SSI（structural schema instructor），然后利用T5模型进行识别相应的槽位。
+1. 通过基于schema的prompt机制，将句子转换为相应的SSI（structural schema instructor），然后利用T5模型端到端识别相应的槽位。
+2. 4个任务（实体抽取、关系抽取、事件抽取、情感抽取）联合学习，paper效果Entity F1 0.9299，Relation F1 0.75，Event Trigger F1 0.7336，Sentiment Triplet F1 0.7507。
 
 # Install
 
