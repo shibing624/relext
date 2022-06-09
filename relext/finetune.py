@@ -56,12 +56,12 @@ def do_train(train_path, dev_path, model_name_or_path='uie-base', max_seq_len=51
 
     train_ds = load_dataset(
         reader,
-        data_files=train_path,
+        data_path=train_path,
         lazy=False,
         max_seq_len=max_seq_len)
     dev_ds = load_dataset(
         reader,
-        data_files=dev_path,
+        data_path=dev_path,
         lazy=False,
         max_seq_len=max_seq_len)
 
